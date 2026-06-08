@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>The Ambient Confidant Playground - High-EQ AI Demos</title>
+  <!-- Modern Typography from Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="index.css">
+</head>
+<body>
+  <div class="app-container">
+    
+    <!-- Sidebar Navigation -->
+    <aside class="sidebar">
+      <div class="sidebar-brand">
+        <div class="brand-glow"></div>
+        <h1>The Ambient Confidant</h1>
+        <p>Interactive Book Playground</p>
+      </div>
+      
+      <nav class="sidebar-nav">
+        <h3 class="nav-section-title">Select Chapter Demo</h3>
+        <ul id="chapter-list">
+          <!-- Dynamically populated via JS -->
+        </ul>
+      </nav>
+      
+      <!-- Ollama Connection Widget -->
+      <div class="connection-widget">
+        <div class="widget-header">
+          <span class="status-indicator offline" id="connection-status"></span>
+          <h4>Ollama Status</h4>
+        </div>
+        <div class="widget-body">
+          <div class="widget-field">
+            <label for="ollama-url">API Address</label>
+            <input type="text" id="ollama-url" value="http://localhost:11434" placeholder="http://localhost:11434">
+          </div>
+          <div class="widget-field">
+            <label for="ollama-model">Active Model</label>
+            <select id="ollama-model">
+              <option value="gemma3:1b">gemma3:1b (Default)</option>
+              <option value="gemma3">gemma3</option>
+            </select>
+          </div>
+          <button id="btn-reconnect" class="btn btn-secondary btn-sm">Check Connection</button>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main Workspace -->
+    <main class="main-content">
+      
+      <!-- Diagnostic Alert Banner -->
+      <div class="alert-banner hidden" id="connection-alert">
+        <div class="alert-content">
+          <strong>⚠️ Local Ollama Server Not Found!</strong> 
+          <p>The playground communicates with Ollama locally on your computer. Please check if Ollama is running and you have run <code>ollama pull gemma3:1b</code>. Look at the README for quick startup instructions.</p>
+        </div>
+      </div>
+
+      <!-- Active Chapter Header -->
+      <section class="chapter-header-panel">
+        <div class="badge" id="chapter-badge">Chapter 1</div>
+        <h2 id="chapter-title" class="outfit-font">The Ambient Confidant Model</h2>
+        <p id="chapter-subtitle">From Utility to Silicon Intimacy</p>
+        
+        <div class="value-prop-card">
+          <div class="value-prop-icon">📈</div>
+          <div class="value-prop-text">
+            <strong>Why Product Managers Care (ROI / Retention Impact):</strong>
+            <p id="chapter-pm-value">Empathy is a business moat. Transactional AI tones trigger threat responses in humans, driving session abandonment. The Validation-First protocol builds long-term relationship value.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Input and Controls Section -->
+      <section class="control-panel">
+        <!-- Col 1: Scenario details & Memory Graph JSON Editor -->
+        <div class="panel-section">
+          <h3 class="section-title">Active FinTech Scenario</h3>
+          <div class="scenario-details">
+            <strong id="scenario-title">B2C Card Decline</strong>
+            <p id="scenario-desc" style="margin-bottom: 12px;">A retail consumer experiencing card decline at checkout with a crying toddler in tow.</p>
+            
+            <label for="memory-graph-editor" class="sub-section-title">🧠 Edit JSON Memory Graph (Chapter 4 State)</label>
+            <textarea id="memory-graph-editor" class="code-font" rows="6" placeholder="{ ... }"></textarea>
+            <button id="btn-save-graph" class="btn btn-secondary btn-xs" style="margin-top: 6px; width: 100%;">Save Graph Context</button>
+          </div>
+        </div>
+
+        <!-- Col 2: Prompt inputs & custom toggles -->
+        <div class="panel-section">
+          <div class="input-header">
+            <h3 class="section-title">Edit User Input Prompt</h3>
+            <button id="btn-reset-prompt" class="btn-text">Reset Default</button>
+          </div>
+          <div class="prompt-input-container">
+            <textarea id="user-prompt" placeholder="Type a message to test..." rows="3"></textarea>
+          </div>
+          
+          <!-- Special Modifier Handles -->
+          <div class="mod-controls-container">
+            <div class="toggle-control">
+              <label class="switch">
+                <input type="checkbox" id="toggle-socratic">
+                <span class="slider round"></span>
+              </label>
+              <span class="control-label-text">
+                <strong>Socratic Mode (Answer Ban)</strong>
+                <p>Reintroduces strategic cognitive load (forces self-discovery)</p>
+              </span>
+            </div>
+            
+            <div class="action-buttons-box">
+              <button id="btn-give-up" class="btn btn-secondary btn-icon-only" title="Simulate 'I Give Up' trigger to force escape hatch">
+                🛑 Simulate "I Give Up"
+              </button>
+              <button id="btn-run" class="btn btn-primary btn-large">
+                <span class="btn-icon">⚡</span> Run Comparison
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Comparative Terminal Grid -->
+      <section class="terminals-grid">
+        
+        <!-- Terminal 1: Oracle -->
+        <article class="terminal-card oracle-theme">
+          <div class="terminal-header">
+            <div class="terminal-window-dots">
+              <span class="dot red"></span>
+              <span class="dot yellow"></span>
+              <span class="dot green"></span>
+            </div>
+            <div class="terminal-header-title-box">
+              <div class="terminal-title">The Oracle AI (Transactional)</div>
+              <div class="terminal-maturity" id="oracle-maturity">Level 1: Stateless Utility</div>
+            </div>
+            <div class="terminal-status" id="oracle-status">Ready</div>
+          </div>
+          
+          <div class="terminal-body" id="oracle-output-pane">
+            <div class="chat-placeholder">
+              <div class="placeholder-icon">🤖</div>
+              <p>Outputs standard helpful, fawning response.</p>
+            </div>
+          </div>
+
+          <div class="terminal-metrics">
+            <div class="metric-group">
+              <span class="metric-label">Tokens:</span>
+              <span class="metric-value" id="oracle-token-count">0</span>
+            </div>
+            <div class="metric-group">
+              <span class="metric-label">Latency:</span>
+              <span class="metric-value" id="oracle-latency">0ms</span>
+            </div>
+          </div>
+          
+          <!-- Scorecard & Prompts -->
+          <div class="terminal-meta-panel">
+            <details class="meta-drawer">
+              <summary>📋 EQ Evaluation Scorecard</summary>
+              <div class="drawer-content">
+                <ul class="scorecard-list" id="oracle-scorecard">
+                  <!-- Generated dynamically -->
+                </ul>
+              </div>
+            </details>
+            <details class="meta-drawer">
+              <summary>🔍 System Prompt Inspector</summary>
+              <div class="drawer-content">
+                <pre class="code-block" id="oracle-system-prompt"></pre>
+              </div>
+            </details>
+          </div>
+        </article>
+
+        <!-- Terminal 2: Confidant -->
+        <article class="terminal-card confidant-theme">
+          <div class="terminal-header">
+            <div class="terminal-window-dots">
+              <span class="dot pulse-blue"></span>
+              <span class="dot pulse-purple"></span>
+              <span class="dot pulse-indigo"></span>
+            </div>
+            <div class="terminal-header-title-box">
+              <div class="terminal-title">The Confidant AI (High-EQ)</div>
+              <div class="terminal-maturity" id="confidant-maturity">Level 4: Context-Aware</div>
+            </div>
+            <div class="terminal-status" id="confidant-status">Ready</div>
+          </div>
+
+          <!-- Internal Monologue Scaffolding Panel -->
+          <div class="monologue-scaffolding-bar">
+            <span>🧠 Chain-of-Thought Internal Monologue</span>
+            <label class="switch">
+              <input type="checkbox" id="toggle-monologue" checked>
+              <span class="slider round"></span>
+            </label>
+          </div>
+
+          <div class="terminal-body scroll-container" id="confidant-output-container">
+            <div class="monologue-container hidden" id="confidant-monologue-pane">
+              <div class="monologue-header">Internal Monologue (Hidden in Production)</div>
+              <div class="monologue-body" id="confidant-monologue-text"></div>
+            </div>
+            <div class="chat-output-pane" id="confidant-output-pane">
+              <div class="chat-placeholder">
+                <div class="placeholder-icon">🔮</div>
+                <p>Outputs validation-first, paced, and grounded response.</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="terminal-metrics">
+            <div class="metric-group">
+              <span class="metric-label">Tokens:</span>
+              <span class="metric-value" id="confidant-token-count">0</span>
+            </div>
+            <div class="metric-group">
+              <span class="metric-label">Latency:</span>
+              <span class="metric-value" id="confidant-latency">0ms</span>
+            </div>
+          </div>
+
+          <!-- Scorecard, Prompts, & Banned Word Scanner -->
+          <div class="terminal-meta-panel">
+            <details class="meta-drawer" open>
+              <summary>📋 EQ Evaluation Scorecard</summary>
+              <div class="drawer-content">
+                <ul class="scorecard-list" id="confidant-scorecard">
+                  <!-- Generated dynamically -->
+                </ul>
+              </div>
+            </details>
+            <details class="meta-drawer">
+              <summary>🚫 Lexical Scanner (Banned Phrase Check)</summary>
+              <div class="drawer-content">
+                <div class="banned-phrase-scanner">
+                  <strong>Chapter Banned Phrase Index:</strong>
+                  <div class="banned-words-tags" id="banned-words-tags">
+                    <!-- Dynamically populated -->
+                  </div>
+                  <p class="banned-scanner-desc">If the AI outputs any of these tokens, it triggers a fawning violation warning on the scorecard check.</p>
+                </div>
+              </div>
+            </details>
+            <details class="meta-drawer">
+              <summary>🔍 System Prompt Inspector</summary>
+              <div class="drawer-content">
+                <pre class="code-block" id="confidant-system-prompt"></pre>
+              </div>
+            </details>
+          </div>
+        </article>
+
+      </section>
+
+      <!-- Troubleshooting Info -->
+      <section class="footer-help">
+        <h3 class="section-title text-center">Troubleshooting & Configuration Guide</h3>
+        <div class="help-grid">
+          <div class="help-card">
+            <h5>1. Enable Local CORS on macOS</h5>
+            <p>If you encounter connection issues, close Ollama and restart it in terminal enabling origins:</p>
+            <pre><code>OLLAMA_ORIGINS="*" ollama serve</code></pre>
+          </div>
+          <div class="help-card">
+            <h5>2. Enable Local CORS on Windows</h5>
+            <p>Close Ollama from system tray, open PowerShell, and start Ollama with CORS origins enabled:</p>
+            <pre><code>$env:OLLAMA_ORIGINS="*"
+ollama serve</code></pre>
+          </div>
+          <div class="help-card">
+            <h5>3. Running the Local Server</h5>
+            <p>Launch the server by double-clicking <code>run.sh</code> (Mac) or <code>run.bat</code> (Windows) inside the directory, or run:</p>
+            <pre><code>python3 -m http.server 8000</code></pre>
+          </div>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <!-- Load DB first then Core App logic -->
+  <script src="prompts.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
