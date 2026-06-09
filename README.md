@@ -7,14 +7,16 @@ This playground acts as a direct companion to the book: *The Ambient Confidant: 
 ---
 
 ## 🚀 Key Features
-1. **Interactive Chapter Sidebar:** Select and test case studies from all seven chapters (e.g., Grocery Checkout Card Declines, Panicked Boarding Card Loss, CFO Wire Shutdowns, and Remittance Oncology Crises).
-2. **Dual-Pane Terminal Live Streaming:** Run user prompts concurrently and watch the outputs from both the Oracle (Level 1) and the Confidant (Level 4/5) stream side-by-side in real-time.
+1. **Interactive Chapter Sidebar:** Select and test case studies from all chapters, including the **Bonus Chapter 8 Socratic Tutor** (failing midterm calculations).
+2. **Multi-Turn Chat Feeds:** Real-time conversational feeds representing the "Amnesia Tax" where the Oracle forgets past turns and the Confidant retains active Memory Graph states.
 3. **Interactive JSON Memory Graph Editor:** Edit the active crises, traps, and victories in real-time, click "Save Graph Context", and witness how the Confidant dynamically performs victory call-backs.
-4. **Socratic Mode Toggle (Answer Ban):** Enable Socratic constraints to force the Confidant to withhold the final solution and ask strategic, learning-oriented queries.
-5. **Lexical Banned-Phrase Scanner:** Inspect the banned word indices for each chapter in real-time. Triggered terms automatically light up red as the tokens are parsed.
-6. **"I Give Up" Escape Hatch:** Click the trigger button to simulate extreme user frustration and watch the Confidant bypass the Socratic loop to execute emergency compliance hand-offs.
-7. **Chain-of-Thought Inspector:** View the Confidant's hidden `<internal_monologue>` sequence as it runs state inferences and validation checks.
-8. **Direct Ollama Integration:** Communicates locally with your Ollama server. No external API keys or subscription fees required.
+4. **Web Speech API Vocal Pacing:** Native, keyless text-to-speech comparison in Chapter 2, downregulating the Confidant's pitch to `0.8` and rate to `0.72` compared to the default Oracle (`1.0` pitch, `1.0` rate).
+5. **PM Support ROI Calculator:** Interactive slider workspace that calculates protected ARR and recovered users from session abandonment improvements.
+6. **Socratic Mode Toggle (Answer Ban):** Enable Socratic constraints to force the Confidant to withhold the final solution and ask strategic, learning-oriented queries.
+7. **Lexical Banned-Phrase Scanner:** Inspect the banned word indices for each chapter in real-time. Triggered terms automatically light up red as the tokens are parsed.
+8. **"I Give Up" Escape Hatch:** Click the trigger button to simulate extreme user frustration and watch the Confidant bypass the Socratic loop to execute emergency compliance hand-offs.
+9. **Chain-of-Thought Inspector:** View the Confidant's hidden `<internal_monologue>` sequence as it runs state inferences and validation checks (visible for Turn 1).
+10. **Direct Ollama Integration:** Communicates locally with your Ollama server. No external API keys or subscription fees required.
 
 ---
 
@@ -91,4 +93,5 @@ If the playground shows **Ollama Status: Offline** and you're sure Ollama is act
   - `ch5_oracle.txt` / `ch5_confidant.txt` - Co-Present Narration & Socratic pivots
   - `ch6_oracle.txt` / `ch6_confidant.txt` - Parasocial Prevention & Safety Off-ramps
   - `ch7_oracle.txt` / `ch7_confidant.txt` - Outage Cognitive Load Minimization
+  - `ch8_oracle.txt` / `ch8_confidant.txt` - Chapter 8 Calculus Socratic Tutor
 * **`run.sh` / `run.bat`** - Startup launchers.

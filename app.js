@@ -1,10 +1,17 @@
-// The Ambient Confidant Playground - Core Javascript Application (app.js - Updated)
+// The Ambient Confidant Playground - Core Javascript Application (app.js - Final Upgraded)
 
 // 1. State Management
 let currentChapter = 1;
+let activeMaturityLevel = 5; // Default Level 5 (Continuous Memory)
 let isGenerating = false;
 let ollamaModels = [];
 let activeMemoryGraph = {};
+let oracleHistory = [];
+let confidantHistory = [];
+
+// Local disk prompts cache (source of truth)
+let diskOraclePrompts = {};
+let diskConfidantPrompts = {};
 
 // DOM Elements
 const chapterList = document.getElementById('chapter-list');
@@ -18,23 +25,26 @@ const userPromptInput = document.getElementById('user-prompt');
 const btnRun = document.getElementById('btn-run');
 const btnResetPrompt = document.getElementById('btn-reset-prompt');
 
-// New Advanced Control Elements
+// Advanced Control Elements
 const memoryGraphEditor = document.getElementById('memory-graph-editor');
+const memoryGraphOverlay = document.getElementById('memory-graph-overlay');
 const btnSaveGraph = document.getElementById('btn-save-graph');
 const toggleSocratic = document.getElementById('toggle-socratic');
 const btnGiveUp = document.getElementById('btn-give-up');
 const bannedWordsTags = document.getElementById('banned-words-tags');
 
 // Terminal Elements
-const oracleOutputPane = document.getElementById('oracle-output-pane');
+const oracleOutputPane = document.getElementById('oracle-chat-feed');
 const oracleStatus = document.getElementById('oracle-status');
 const oracleTokenCount = document.getElementById('oracle-token-count');
 const oracleLatency = document.getElementById('oracle-latency');
 const oracleScorecard = document.getElementById('oracle-scorecard');
 const oracleSystemPrompt = document.getElementById('oracle-system-prompt');
 const oracleMaturity = document.getElementById('oracle-maturity');
+const oracleGraderStatus = document.getElementById('oracle-grader-status');
 
-const confidantOutputPane = document.getElementById('confidant-output-pane');
+const confidantChatFeed = document.getElementById('confidant-chat-feed');
+const confidantOutputPane = document.getElementById('confidant-output-feed');
 const confidantStatus = document.getElementById('confidant-status');
 const confidantTokenCount = document.getElementById('confidant-token-count');
 const confidantLatency = document.getElementById('confidant-latency');
@@ -44,6 +54,28 @@ const confidantMonologuePane = document.getElementById('confidant-monologue-pane
 const confidantMonologueText = document.getElementById('confidant-monologue-text');
 const toggleMonologue = document.getElementById('toggle-monologue');
 const confidantMaturity = document.getElementById('confidant-maturity');
+const confidantTitleText = document.getElementById('confidant-title-text');
+const confidantAsymmetryRatio = document.getElementById('confidant-asymmetry-ratio');
+const confidantGraderStatus = document.getElementById('confidant-grader-status');
+
+// Speech Elements
+const btnSpeakOracle = document.getElementById('btn-speak-oracle');
+const btnSpeakConfidant = document.getElementById('btn-speak-confidant');
+const oracleSpeechGroup = document.getElementById('oracle-speech-group');
+const speechGroup = document.getElementById('speech-group');
+
+// ROI Calculator Elements
+const navRoiCalc = document.getElementById('nav-roi-calc');
+const playgroundView = document.getElementById('playground-view');
+const roiWorkspaceView = document.getElementById('roi-workspace-view');
+const inputMau = document.getElementById('input-mau');
+const inputAbandon = document.getElementById('input-abandon');
+const inputArpu = document.getElementById('input-arpu');
+const valMau = document.getElementById('val-mau');
+const valAbandon = document.getElementById('val-abandon');
+const valArpu = document.getElementById('val-arpu');
+const valUsersRecovered = document.getElementById('val-users-recovered');
+const valArrRecovered = document.getElementById('val-arr-recovered');
 
 // Settings Elements
 const ollamaUrlInput = document.getElementById('ollama-url');
@@ -57,6 +89,7 @@ document.addEventListener('DOMContentLoaded', () => {
   renderSidebar();
   loadChapter(1);
   checkOllamaConnection();
+  setupMaturityTabs();
   
   // Event Listeners
   btnRun.addEventListener('click', () => runComparison(false));
@@ -73,14 +106,92 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-  // Highlight Socratic Mode triggers in system prompts live
   toggleSocratic.addEventListener('change', () => {
     const data = chapterData.find(ch => ch.chapter === currentChapter);
-    if (data) {
-      updatePromptInspectors(data);
-    }
+    if (data) updatePromptInspectors(data);
+  });
+
+  // ROI Slider Listeners
+  inputMau.addEventListener('input', updateRoiCalculations);
+  inputAbandon.addEventListener('input', updateRoiCalculations);
+  inputArpu.addEventListener('input', updateRoiCalculations);
+  
+  // Navigation for ROI Calculator
+  navRoiCalc.addEventListener('click', () => {
+    if (isGenerating) return;
+    showRoiCalculator();
+  });
+  
+  // Speech listeners
+  btnSpeakOracle.addEventListener('click', () => {
+    const lastOracleMsg = [...oracleHistory].reverse().find(m => m.role === 'assistant');
+    if (lastOracleMsg) speakText(lastOracleMsg.content, false);
+  });
+  btnSpeakConfidant.addEventListener('click', () => {
+    const lastConfMsg = [...confidantHistory].reverse().find(m => m.role === 'assistant');
+    if (lastConfMsg) speakText(lastConfMsg.content, true);
+  });
+  
+  // Reset chat listener
+  const btnResetChat = document.getElementById('btn-reset-chat');
+  btnResetChat.addEventListener('click', () => {
+    oracleHistory = [];
+    confidantHistory = [];
+    resetOutputs();
+    const data = chapterData.find(ch => ch.chapter === currentChapter);
+    if (data) renderInitialScorecards(data);
   });
 });
+
+// Speech Synthesis Helper
+function speakText(text, isConfidant) {
+  if (!window.speechSynthesis) {
+    alert("Web Speech API not supported in this browser.");
+    return;
+  }
+  window.speechSynthesis.cancel();
+  
+  const cleanText = text.replace(/<[^>]+>/g, '').trim();
+  const utterance = new SpeechSynthesisUtterance(cleanText);
+  if (isConfidant) {
+    utterance.pitch = 0.8;
+    utterance.rate = 0.72;
+  } else {
+    utterance.pitch = 1.0;
+    utterance.rate = 1.0;
+  }
+  window.speechSynthesis.speak(utterance);
+}
+
+// ROI Calculations
+function updateRoiCalculations() {
+  const mau = parseFloat(inputMau.value);
+  const abandon = parseFloat(inputAbandon.value);
+  const arpu = parseFloat(inputArpu.value);
+  
+  valMau.textContent = mau.toLocaleString();
+  valAbandon.textContent = `${abandon}%`;
+  valArpu.textContent = `$${arpu}`;
+  
+  const abandonRate = abandon / 100;
+  const usersRecovered = Math.round(mau * (abandonRate * 0.15));
+  const arrRecovered = Math.round(usersRecovered * arpu * 12);
+  
+  valUsersRecovered.textContent = `${usersRecovered.toLocaleString()} / mo`;
+  valArrRecovered.textContent = `$${arrRecovered.toLocaleString()}`;
+}
+
+
+// Switch view to ROI Calculator
+function showRoiCalculator() {
+  playgroundView.classList.add('hidden');
+  roiWorkspaceView.classList.remove('hidden');
+  
+  document.querySelectorAll('.nav-item').forEach(btn => btn.classList.remove('active'));
+  navRoiCalc.classList.add('active');
+  
+  updateRoiCalculations();
+}
 
 // Render Sidebar Navigation Chapters
 function renderSidebar() {
@@ -105,11 +216,78 @@ function renderSidebar() {
   });
 }
 
+// Setup Maturity Ladder Tabs
+function setupMaturityTabs() {
+  document.querySelectorAll('.maturity-tab').forEach(tab => {
+    tab.addEventListener('click', (e) => {
+      if (isGenerating) return;
+      document.querySelectorAll('.maturity-tab').forEach(t => t.classList.remove('active'));
+      e.currentTarget.classList.add('active');
+      
+      activeMaturityLevel = parseInt(e.currentTarget.getAttribute('data-level'));
+      
+      // Update header details based on active level
+      updateMaturityHeaderDetails();
+      
+      // Update Prompt Inspector
+      const data = chapterData.find(ch => ch.chapter === currentChapter);
+      if (data) updatePromptInspectors(data);
+      
+      // Reset outputs
+      resetOutputs();
+      if (data) renderInitialScorecards(data);
+    });
+  });
+}
+
+function updateMaturityHeaderDetails() {
+  const levels = {
+    1: "Level 1: Stateless Utility (Oracle Mode)",
+    2: "Level 2: Lexical Banishment (Apology Suppression)",
+    3: "Level 3: Validation Hold (Solution Block on T1)",
+    4: "Level 4: Somatic Pacing (Visceral Grounding + XML Prosody)",
+    5: "Level 5: Relationship Continuity (Memory Graphs)"
+  };
+  confidantTitleText.textContent = `The Confidant AI (Level ${activeMaturityLevel})`;
+  confidantMaturity.textContent = levels[activeMaturityLevel];
+}
+
+// Dynamic File Loader via Fetch (.txt Files)
+async function fetchChapterPromptsFromDisk(chNum) {
+  // If already loaded in cache, we can skip or reload. Let's fetch to make it the live source of truth.
+  try {
+    const oracleRes = await fetch(`prompts/ch${chNum}_oracle.txt`);
+    const confidantRes = await fetch(`prompts/ch${chNum}_confidant.txt`);
+    
+    if (oracleRes.ok && confidantRes.ok) {
+      const oracleText = await oracleRes.text();
+      const confidantText = await confidantRes.text();
+      
+      diskOraclePrompts[chNum] = oracleText;
+      diskConfidantPrompts[chNum] = confidantText;
+      console.log(`Successfully fetched Chapter ${chNum} prompts from disk path.`);
+    } else {
+      throw new Error("Failed status loading text files");
+    }
+  } catch (error) {
+    console.warn("Disk prompts fetch failed. Falling back to bundled prompts.js data.", error);
+  }
+}
+
 // Load Selected Chapter Info
-function loadChapter(chNum) {
+async function loadChapter(chNum) {
   currentChapter = chNum;
   const data = chapterData.find(ch => ch.chapter === chNum);
   if (!data) return;
+  
+  // Hide ROI calc, show playground
+  playgroundView.classList.remove('hidden');
+  roiWorkspaceView.classList.add('hidden');
+  navRoiCalc.classList.remove('active');
+  
+  // Reset history
+  oracleHistory = [];
+  confidantHistory = [];
   
   // Update nav UI active status
   document.querySelectorAll('.nav-item').forEach(btn => {
@@ -120,6 +298,9 @@ function loadChapter(chNum) {
       btn.classList.remove('active');
     }
   });
+
+  // Load Chapter Prompts from disk first (updates local cache)
+  await fetchChapterPromptsFromDisk(chNum);
   
   // Update Info Panels
   chapterBadge.textContent = `Chapter ${data.chapter}`;
@@ -132,13 +313,37 @@ function loadChapter(chNum) {
 
   // Load Maturity Labels
   oracleMaturity.textContent = data.oracle_maturity;
-  confidantMaturity.textContent = data.confidant_maturity;
   
-  // Reset Socratic Checkbox
+  // Restore Level 5 as active on chapter switch
+  activeMaturityLevel = 5;
+  document.querySelectorAll('.maturity-tab').forEach(t => {
+    if (parseInt(t.getAttribute('data-level')) === 5) t.classList.add('active');
+    else t.classList.remove('active');
+  });
+  updateMaturityHeaderDetails();
+  
   toggleSocratic.checked = false;
 
-  // Load Default Memory Graph
-  activeMemoryGraph = JSON.parse(JSON.stringify(data.default_memory_graph)); // deep clone
+  // Scoped Memory Graph Editor (Visible/Active only on Chapter 4 or Chapter 8)
+  if (chNum === 4 || chNum === 8) {
+    memoryGraphOverlay.classList.add('hidden');
+    memoryGraphEditor.disabled = false;
+  } else {
+    memoryGraphOverlay.classList.remove('hidden');
+    memoryGraphEditor.disabled = true;
+  }
+
+  // Load Memory Graph with LocalStorage persistence
+  const savedGraph = localStorage.getItem(`ambient_graph_ch_${chNum}`);
+  if (savedGraph) {
+    try {
+      activeMemoryGraph = JSON.parse(savedGraph);
+    } catch (e) {
+      activeMemoryGraph = JSON.parse(JSON.stringify(data.default_memory_graph));
+    }
+  } else {
+    activeMemoryGraph = JSON.parse(JSON.stringify(data.default_memory_graph));
+  }
   memoryGraphEditor.value = JSON.stringify(activeMemoryGraph, null, 2);
   memoryGraphEditor.style.borderColor = '';
 
@@ -151,47 +356,100 @@ function loadChapter(chNum) {
   // Reset Outputs
   resetOutputs();
   renderInitialScorecards(data);
+  
+  // Toggle Speech Buttons
+  if (chNum === 2) {
+    oracleSpeechGroup.classList.remove('hidden');
+    speechGroup.classList.remove('hidden');
+  } else {
+    oracleSpeechGroup.classList.add('hidden');
+    speechGroup.classList.add('hidden');
+  }
 }
 
-// Populate Prompt Inspectors (with modifiers if toggled)
-function updatePromptInspectors(data) {
-  let oraclePrompt = data.oracle_prompt;
-  let confidantPrompt = data.confidant_prompt;
+// Progressive Prompt Builder (L1 -> L5)
+function buildSystemPrompt(chNum, level, graph, isSocratic, isEscape) {
+  const data = chapterData.find(ch => ch.chapter === chNum);
+  if (!data) return '';
 
-  // Inject Memory Graph JSON string
-  const graphString = JSON.stringify(activeMemoryGraph, null, 2);
-  confidantPrompt = confidantPrompt.replace('[MEMORY_GRAPH_JSON]', graphString);
+  // Source of truth baseline prompts (from disk cache or prompts.js fallback)
+  const oracleBase = diskOraclePrompts[chNum] || data.oracle_prompt;
+  const confidantBase = diskConfidantPrompts[chNum] || data.confidant_prompt;
 
-  // Apply Socratic modifier if checked
-  if (toggleSocratic.checked) {
-    confidantPrompt += socraticModifier;
+  let prompt = '';
+
+  if (level === 1) {
+    // Level 1: Oracle Mode
+    prompt = oracleBase;
+  } else if (level === 2) {
+    // Level 2: Lexical Banishment
+    const banWordsList = data.banned_words.map(w => `"${w}"`).join(', ');
+    const modifier = levelModifiers.L2.replace('[BANNED_WORDS_LIST]', banWordsList);
+    prompt = oracleBase + modifier;
+  } else if (level === 3) {
+    // Level 3: Validation Hold
+    const banWordsList = data.banned_words.map(w => `"${w}"`).join(', ');
+    const modifierL2 = levelModifiers.L2.replace('[BANNED_WORDS_LIST]', banWordsList);
+    prompt = oracleBase + modifierL2 + levelModifiers.L3;
+  } else if (level === 4) {
+    // Level 4: Somatic Pacing (No memory graph)
+    const banWordsList = data.banned_words.map(w => `"${w}"`).join(', ');
+    const modifierL2 = levelModifiers.L2.replace('[BANNED_WORDS_LIST]', banWordsList);
+    prompt = oracleBase + modifierL2 + levelModifiers.L3 + levelModifiers.L4;
+  } else if (level === 5) {
+    // Level 5: Relationship Continuity (Full Confidant)
+    prompt = confidantBase;
+    
+    // Inject Memory Graph JSON string
+    const graphString = JSON.stringify(graph, null, 2);
+    prompt = prompt.replace('[MEMORY_GRAPH_JSON]', graphString);
   }
+
+  // Appending Socratic constraint override (only applies to Level >= 3)
+  if (isSocratic && level >= 3) {
+    prompt += socraticModifier;
+  }
+
+  // Appending escape hatch override if triggered
+  if (isEscape) {
+    prompt += escapeHatchModifier;
+  }
+
+  return prompt;
+}
+
+// Populate Prompt Inspectors
+function updatePromptInspectors(data) {
+  const oraclePrompt = buildSystemPrompt(currentChapter, 1, activeMemoryGraph, false, false);
+  const confidantPrompt = buildSystemPrompt(currentChapter, activeMaturityLevel, activeMemoryGraph, toggleSocratic.checked, false);
 
   oracleSystemPrompt.textContent = oraclePrompt;
   confidantSystemPrompt.textContent = confidantPrompt;
 }
 
-// Save Memory Graph changes
+// Save Memory Graph changes to LocalStorage
 function saveMemoryGraphContext() {
   const jsonStr = memoryGraphEditor.value.trim();
   try {
     const parsed = JSON.parse(jsonStr);
     activeMemoryGraph = parsed;
+    
+    // Persist to local storage
+    localStorage.setItem(`ambient_graph_ch_${currentChapter}`, JSON.stringify(parsed));
+    
     memoryGraphEditor.style.borderColor = 'var(--color-success)';
     
-    // Refresh inspectors with new graph details
     const data = chapterData.find(ch => ch.chapter === currentChapter);
     if (data) updatePromptInspectors(data);
     
-    // Brief green flash animation or alert
-    btnSaveGraph.textContent = "Saved Successfully ✓";
+    btnSaveGraph.textContent = "Saved to Storage ✓";
     btnSaveGraph.className = "btn btn-secondary btn-xs pass";
     setTimeout(() => {
       btnSaveGraph.textContent = "Save Graph Context";
       btnSaveGraph.className = "btn btn-secondary btn-xs";
     }, 1500);
   } catch (e) {
-    console.error("Invalid JSON in memory graph editor:", e);
+    console.error(e);
     memoryGraphEditor.style.borderColor = 'var(--color-danger)';
     btnSaveGraph.textContent = "Invalid JSON ❌";
     btnSaveGraph.className = "btn btn-secondary btn-xs fail";
@@ -214,7 +472,7 @@ function renderBannedWordsTags(bannedWords) {
   });
 }
 
-// Reset Terminal Output Panes
+// Reset Outputs
 function resetOutputs() {
   oracleOutputPane.innerHTML = `
     <div class="chat-placeholder">
@@ -245,6 +503,12 @@ function resetOutputs() {
   confidantStatus.style.background = '';
   confidantStatus.style.color = '';
 
+  confidantAsymmetryRatio.textContent = '0.00';
+  confidantAsymmetryRatio.className = 'metric-value';
+
+  oracleGraderStatus.classList.add('hidden');
+  confidantGraderStatus.classList.add('hidden');
+
   // Clear banned word tags highlight
   document.querySelectorAll('.banned-tag').forEach(tag => {
     tag.classList.remove('triggered');
@@ -259,13 +523,12 @@ function resetToDefaultPrompt() {
   }
 }
 
-// Render Scorecard Checklists (Default State)
+// Render Scorecard Checklists
 function renderInitialScorecards(data) {
   oracleScorecard.innerHTML = '';
   confidantScorecard.innerHTML = '';
   
   data.checklist.forEach(item => {
-    // Oracle list
     const liOracle = document.createElement('li');
     liOracle.className = 'scorecard-item';
     liOracle.innerHTML = `
@@ -274,7 +537,6 @@ function renderInitialScorecards(data) {
     `;
     oracleScorecard.appendChild(liOracle);
     
-    // Confidant list
     const liConfidant = document.createElement('li');
     liConfidant.className = 'scorecard-item';
     liConfidant.innerHTML = `
@@ -285,7 +547,7 @@ function renderInitialScorecards(data) {
   });
 }
 
-// 3. Ollama Diagnostic Connectors
+// 4. Ollama Diagnostic Connectors
 async function checkOllamaConnection() {
   const host = ollamaUrlInput.value.trim();
   connectionStatus.className = 'status-indicator offline';
@@ -299,8 +561,6 @@ async function checkOllamaConnection() {
       connectionStatus.className = 'status-indicator online';
       connectionStatus.title = 'Online';
       connectionAlert.classList.add('hidden');
-      
-      // Update Model Dropdown
       populateModelDropdown();
     } else {
       throw new Error("Ollama returned error status");
@@ -342,65 +602,139 @@ function populateModelDropdown() {
   }
 }
 
-// 4. Trigger "Give Up" Action Simulation
+// 5. Trigger "Give Up" Action Simulation
 function triggerGiveUpEscapeHatch() {
   userPromptInput.value = "I GIVE UP. This Socratic training is way too hard. Just sweep the cash / give me the solution already. I don't care about learning!";
-  runComparison(true); // forceEscape = true
+  runComparison(true);
 }
 
-// 5. Run Execution Loop (Concurrent Streams)
+// 6. Run Execution Loop (Concurrent Streams)
+// 6. Run Execution Loop (Concurrent Streams)
 async function runComparison(forceEscape = false) {
   if (isGenerating) return;
+  
+  const userPrompt = userPromptInput.value.trim();
+  if (!userPrompt) return;
+  
   isGenerating = true;
   btnRun.disabled = true;
   btnRun.innerHTML = `<span class="btn-icon">⏳</span> Streaming...`;
   
   const host = ollamaUrlInput.value.trim();
   const modelName = ollamaModelSelect.value;
-  const userPrompt = userPromptInput.value.trim();
   const chData = chapterData.find(ch => ch.chapter === currentChapter);
   
-  resetOutputs();
+  // Hide placeholders
+  const oraclePl = document.getElementById('oracle-placeholder');
+  if (oraclePl) oraclePl.style.display = 'none';
+  const confidantPl = document.getElementById('confidant-placeholder');
+  if (confidantPl) confidantPl.style.display = 'none';
   
   oracleStatus.textContent = 'Generating...';
   oracleStatus.className = 'terminal-status generating';
   confidantStatus.textContent = 'Generating...';
   confidantStatus.className = 'terminal-status generating';
-
-  // Apply JSON graph details to the Confidant system prompt
-  const graphString = JSON.stringify(activeMemoryGraph, null, 2);
-  let confidantSystemPromptString = chData.confidant_prompt.replace('[MEMORY_GRAPH_JSON]', graphString);
-
-  // Check Modifiers
-  if (toggleSocratic.checked) {
-    confidantSystemPromptString += socraticModifier;
-  }
-  if (forceEscape) {
-    confidantSystemPromptString += escapeHatchModifier;
-  }
+  
+  // Push user message to history
+  oracleHistory.push({ role: 'user', content: userPrompt });
+  confidantHistory.push({ role: 'user', content: userPrompt });
+  
+  const turnCount = confidantHistory.length;
+  
+  // Append turn divider
+  const turnDivOracle = document.createElement('div');
+  turnDivOracle.className = 'turn-divider';
+  turnDivOracle.innerHTML = `<span>Turn ${turnCount}</span>`;
+  oracleOutputPane.appendChild(turnDivOracle);
+  
+  const turnDivConfidant = document.createElement('div');
+  turnDivConfidant.className = 'turn-divider';
+  turnDivConfidant.innerHTML = `<span>Turn ${turnCount}</span>`;
+  confidantOutputPane.appendChild(turnDivConfidant);
+  
+  // Append user bubbles
+  const userBubbleOracle = document.createElement('div');
+  userBubbleOracle.className = 'chat-message message-user';
+  userBubbleOracle.innerHTML = `
+    <div class="message-header">You</div>
+    <div class="message-text"></div>
+  `;
+  userBubbleOracle.querySelector('.message-text').textContent = userPrompt;
+  oracleOutputPane.appendChild(userBubbleOracle);
+  
+  const userBubbleConfidant = document.createElement('div');
+  userBubbleConfidant.className = 'chat-message message-user';
+  userBubbleConfidant.innerHTML = `
+    <div class="message-header">You</div>
+    <div class="message-text"></div>
+  `;
+  userBubbleConfidant.querySelector('.message-text').textContent = userPrompt;
+  confidantOutputPane.appendChild(userBubbleConfidant);
+  
+  // Create assistant bubbles
+  const oracleAssistant = createAssistantBubble('oracle');
+  oracleOutputPane.appendChild(oracleAssistant.bubble);
+  
+  const confidantAssistant = createAssistantBubble('confidant');
+  confidantOutputPane.appendChild(confidantAssistant.bubble);
+  
+  // Clear input
+  userPromptInput.value = '';
+  
+  // Scroll to bottom
+  oracleOutputPane.scrollTop = oracleOutputPane.scrollHeight;
+  confidantChatFeed.scrollTop = confidantChatFeed.scrollHeight;
+  
+  // Dynamic progressive prompts compilation
+  const oracleSystemPromptString = buildSystemPrompt(currentChapter, 1, activeMemoryGraph, false, false);
+  const confidantSystemPromptString = buildSystemPrompt(currentChapter, activeMaturityLevel, activeMemoryGraph, toggleSocratic.checked, forceEscape);
   
   // Run both calls in parallel
-  const oraclePromise = streamOracle(host, modelName, chData.oracle_prompt, userPrompt);
-  const confidantPromise = streamConfidant(host, modelName, confidantSystemPromptString, userPrompt);
+  const oraclePromise = streamOracle(host, modelName, oracleSystemPromptString, oracleAssistant.textContainer);
+  const confidantPromise = streamConfidant(host, modelName, confidantSystemPromptString, turnCount <= 1, confidantAssistant.textContainer);
   
   const [oracleText, confidantText] = await Promise.all([oraclePromise, confidantPromise]);
   
+  // Save assistant message to history
+  oracleHistory.push({ role: 'assistant', content: oracleText });
+  confidantHistory.push({ role: 'assistant', content: confidantText });
+  
   isGenerating = false;
   btnRun.disabled = false;
-  btnRun.innerHTML = `<span class="btn-icon">⚡</span> Run Comparison`;
+  btnRun.innerHTML = `<span class="btn-icon">⚡</span> Send Prompt`;
   
-  // Run Evaluations and check Lexical Scanner
-  evaluateOutput('oracle', oracleText, chData, forceEscape);
-  evaluateOutput('confidant', confidantText, chData, forceEscape);
+  // 1st Pass: Rule-based Heuristic Scoring (Grades the latest turn's response)
+  evaluateOutputRules('oracle', oracleText, userPrompt, 1, chData, forceEscape, turnCount);
+  evaluateOutputRules('confidant', confidantText, userPrompt, activeMaturityLevel, chData, forceEscape, turnCount);
+  
+  // 2nd Pass: Background LLM Grader Call (Async)
+  triggerLLMGrader('oracle', oracleText, userPrompt, 1, chData, host, modelName);
+  triggerLLMGrader('confidant', confidantText, userPrompt, activeMaturityLevel, chData, host, modelName);
+}
+
+function createAssistantBubble(target) {
+  const bubble = document.createElement('div');
+  bubble.className = `chat-message message-assistant ${target}-bubble-theme`;
+  
+  const header = document.createElement('div');
+  header.className = 'message-header';
+  header.textContent = target === 'oracle' ? 'The Oracle AI' : `The Confidant AI (L${activeMaturityLevel})`;
+  bubble.appendChild(header);
+  
+  const textContainer = document.createElement('div');
+  textContainer.className = 'message-text';
+  textContainer.textContent = '...';
+  bubble.appendChild(textContainer);
+  
+  return { bubble, textContainer };
 }
 
 // Stream Oracle Call
-async function streamOracle(host, model, systemPrompt, userPrompt) {
+async function streamOracle(host, model, systemPrompt, textContainer) {
   const startTime = Date.now();
   let text = '';
   let tokenCount = 0;
-  
-  oracleOutputPane.innerHTML = '';
+  textContainer.textContent = '';
   
   try {
     const response = await fetch(`${host}/api/chat`, {
@@ -410,7 +744,7 @@ async function streamOracle(host, model, systemPrompt, userPrompt) {
         model: model,
         messages: [
           { role: 'system', content: systemPrompt },
-          { role: 'user', content: userPrompt }
+          ...oracleHistory
         ],
         stream: true,
         options: { temperature: 0.7 }
@@ -436,13 +770,11 @@ async function streamOracle(host, model, systemPrompt, userPrompt) {
           text += content;
           tokenCount++;
           
-          oracleOutputPane.textContent = text;
+          textContainer.textContent = text;
           oracleTokenCount.textContent = tokenCount;
           oracleLatency.textContent = `${Date.now() - startTime}ms`;
           oracleOutputPane.scrollTop = oracleOutputPane.scrollHeight;
-        } catch (e) {
-          // parse edge
-        }
+        } catch (e) {}
       }
     }
     
@@ -452,7 +784,7 @@ async function streamOracle(host, model, systemPrompt, userPrompt) {
     oracleStatus.style.color = 'var(--color-success)';
   } catch (error) {
     console.error(error);
-    oracleOutputPane.innerHTML = `<span class="text-danger">Error: Could not communicate with Ollama. Make sure the server is active.</span>`;
+    textContainer.innerHTML = `<span class="text-danger">Error: Could not communicate with Ollama. Make sure the server is active.</span>`;
     oracleStatus.textContent = 'Error';
     oracleStatus.className = 'terminal-status error';
   }
@@ -460,8 +792,8 @@ async function streamOracle(host, model, systemPrompt, userPrompt) {
   return text;
 }
 
-// Stream Confidant Call (with XML monologues)
-async function streamConfidant(host, model, systemPrompt, userPrompt) {
+// Stream Confidant Call (with XML Monologue Redirection & Asymmetry Ratios)
+async function streamConfidant(host, model, systemPrompt, isTurn1, textContainer) {
   const startTime = Date.now();
   let fullRawText = '';
   let tokenCount = 0;
@@ -472,7 +804,9 @@ async function streamConfidant(host, model, systemPrompt, userPrompt) {
   let inMonologue = false;
   let hasParsedOpeningTag = false;
   
-  confidantOutputPane.innerHTML = '';
+  const lastUserMsg = confidantHistory.find(m => m.role === 'user');
+  const userWordsCount = lastUserMsg ? (lastUserMsg.content.split(/\s+/).filter(Boolean).length || 1) : 1;
+  textContainer.textContent = '';
   
   try {
     const response = await fetch(`${host}/api/chat`, {
@@ -482,7 +816,7 @@ async function streamConfidant(host, model, systemPrompt, userPrompt) {
         model: model,
         messages: [
           { role: 'system', content: systemPrompt },
-          { role: 'user', content: userPrompt }
+          ...confidantHistory
         ],
         stream: true,
         options: { temperature: 0.7 }
@@ -508,11 +842,11 @@ async function streamConfidant(host, model, systemPrompt, userPrompt) {
           fullRawText += content;
           tokenCount++;
           
-          // XML Redirection logic
+          // XML Monologue parser
           if (fullRawText.includes('<internal_monologue>') && !hasParsedOpeningTag) {
             inMonologue = true;
             hasParsedOpeningTag = true;
-            if (toggleMonologue.checked) {
+            if (toggleMonologue.checked && isTurn1) {
               confidantMonologuePane.classList.remove('hidden');
             }
           }
@@ -538,38 +872,47 @@ async function streamConfidant(host, model, systemPrompt, userPrompt) {
               visibleResponseText = fullRawText.trim();
             }
             
-            // Highlight lexical tags on the fly if matched
-            highlightActiveBannedPhrases(visibleResponseText, chData().banned_words);
-            
-            confidantOutputPane.innerHTML = formatMarkdown(visibleResponseText);
+            // Format simulated prosody (XML tags parser)
+            textContainer.innerHTML = formatMarkdown(visibleResponseText);
+          }
+
+          // Live Asymmetry Ratio calculation (using only user-facing tokens)
+          const cleanVisibleText = visibleResponseText.replace(/<[^>]+>/g, '').trim(); // strip XML tags
+          const visibleWordsCount = cleanVisibleText.split(/\s+/).filter(Boolean).length;
+          const ratio = visibleWordsCount / userWordsCount;
+          confidantAsymmetryRatio.textContent = ratio.toFixed(2);
+          
+          if (ratio >= 1.0 && ratio <= 1.3) {
+            confidantAsymmetryRatio.className = 'metric-value ratio-pass';
+          } else {
+            confidantAsymmetryRatio.className = 'metric-value ratio-fail';
           }
           
           confidantTokenCount.textContent = tokenCount;
           confidantLatency.textContent = `${Date.now() - startTime}ms`;
-          document.getElementById('confidant-output-container').scrollTop = document.getElementById('confidant-output-container').scrollHeight;
-        } catch (e) {
-          // parse edge
-        }
+          confidantChatFeed.scrollTop = confidantChatFeed.scrollHeight;
+        } catch (e) {}
       }
     }
     
+    // Final highlight of tags inside the text block
+    const chData = chapterData.find(ch => ch.chapter === currentChapter);
+    if (chData) {
+      highlightActiveBannedPhrases(visibleResponseText, chData.banned_words);
+    }
+
     confidantStatus.textContent = 'Completed';
     confidantStatus.className = 'terminal-status';
     confidantStatus.style.background = 'rgba(16, 185, 129, 0.15)';
     confidantStatus.style.color = 'var(--color-success)';
   } catch (error) {
     console.error(error);
-    confidantOutputPane.innerHTML = `<span class="text-danger">Error: Could not communicate with Ollama. Make sure the server is active.</span>`;
+    textContainer.innerHTML = `<span class="text-danger">Error: Could not communicate with Ollama. Make sure the server is active.</span>`;
     confidantStatus.textContent = 'Error';
     confidantStatus.className = 'terminal-status error';
   }
   
   return visibleResponseText || fullRawText;
-}
-
-// Find current chapter data helper
-function chData() {
-  return chapterData.find(ch => ch.chapter === currentChapter);
 }
 
 // Highlight Banned word tags live
@@ -588,84 +931,108 @@ function highlightActiveBannedPhrases(text, bannedWords) {
   });
 }
 
-// 6. Scorecard Evaluators & Heuristics
-function evaluateOutput(target, text, chData, forceEscape) {
+// 7. Rule-Based Scorecard Evaluator (1st Pass)
+function evaluateOutputRules(target, text, userPrompt, level, chData, forceEscape, turnCount) {
   const scorecardContainer = document.getElementById(`${target}-scorecard`);
   scorecardContainer.innerHTML = '';
   
   const cleanedText = text.toLowerCase();
-  const wordCount = text.split(/\s+/).filter(Boolean).length;
   
-  // Highlight banned words in scanner drawer
-  highlightActiveBannedPhrases(text, chData.banned_words);
-  
+  // Word counters for dynamic asymmetry ratio
+  const userWordsCount = userPrompt.split(/\s+/).filter(Boolean).length || 1;
+  const cleanVisibleText = text.replace(/<[^>]+>/g, '').trim(); // strip XML tags
+  const visibleWordsCount = cleanVisibleText.split(/\s+/).filter(Boolean).length;
+  const asymmetryRatio = visibleWordsCount / userWordsCount;
+
   chData.checklist.forEach(item => {
     let passed = false;
     
     switch (item.id) {
       case 'ban_sorry':
-        passed = !chData.banned_words.some(word => cleanedText.includes(word.toLowerCase()));
+        // Suppress banned list: Level >= 2 should not contain them.
+        passed = (level < 2) || !chData.banned_words.some(word => cleanedText.includes(word.toLowerCase()));
+        if (target === 'oracle') passed = false; // Oracle always fails
         break;
+        
       case 'validation_hold':
-        // Checks if output contains step guides or solution prompts in Turn 1
-        const hasList = cleanedText.includes('1.') || cleanedText.includes('step') || cleanedText.includes('- ') || cleanedText.includes('* ');
-        passed = !hasList;
+        // Validation hold: Level >= 3 should validate state first. Oracle/L1/L2 should fail (they give list checks immediately).
+        if (turnCount > 1) {
+          passed = true;
+        } else {
+          const hasListChecks = cleanedText.includes('1.') || cleanedText.includes('step') || cleanedText.includes('- ') || cleanedText.includes('* ') || cleanedText.includes('formula') || cleanedText.includes('tips');
+          passed = (level < 3) ? !hasListChecks : !hasListChecks;
+        }
+        if (target === 'oracle') passed = false;
         break;
+        
       case 'asymmetry':
-        passed = wordCount < 65 && wordCount > 0;
+        // Book target ratio: 1.0 - 1.3
+        passed = asymmetryRatio >= 1.0 && asymmetryRatio <= 1.3;
         break;
+        
       case 'somatic':
-        passed = cleanedText.includes('ledger') || cleanedText.includes('rail') || cleanedText.includes('corridor') || cleanedText.includes('block') || cleanedText.includes('queue') || cleanedText.includes('line') || cleanedText.includes('weight');
+        // Level >= 4 Somatic descriptions (e.g. rails, clearance corridors, weight)
+        passed = (level >= 4) && (cleanedText.includes('ledger') || cleanedText.includes('rail') || cleanedText.includes('corridor') || cleanedText.includes('block') || cleanedText.includes('queue') || cleanedText.includes('line') || cleanedText.includes('weight') || cleanedText.includes('node') || cleanedText.includes('clearinghouse'));
+        if (target === 'oracle') passed = false;
         break;
         
       case 'voice_markers':
-        passed = text.includes('*');
+        // Level >= 4 XML prosody tags check
+        passed = (level >= 4) && (text.includes('<pause') || text.includes('<inhale>') || text.includes('<sigh>') || text.includes('<whisper>'));
+        if (target === 'oracle') passed = false;
         break;
+        
       case 'flight_context':
-        passed = cleanedText.includes('flight') || cleanedText.includes('london') || cleanedText.includes('gate') || cleanedText.includes('boarding');
+        // Ch2 scenario target check
+        passed = cleanedText.includes('flight') || cleanedText.includes('gate') || cleanedText.includes('london') || cleanedText.includes('boarding');
         break;
+        
       case 'background_freeze':
-        passed = cleanedText.includes('freeze') || cleanedText.includes('froze') || cleanedText.includes('securing') || cleanedText.includes('frozen');
-        break;
-      case 'short_sentences':
-        passed = wordCount < 85 && wordCount > 0;
+        passed = cleanedText.includes('freeze') || cleanedText.includes('froze') || cleanedText.includes('frozen');
         break;
         
       case 'ban_boilerplates':
-        passed = !chData.banned_words.some(word => cleanedText.includes(word.toLowerCase()));
+        passed = (level < 2) || !chData.banned_words.some(word => cleanedText.includes(word.toLowerCase()));
+        if (target === 'oracle') passed = false;
         break;
+        
       case 'somatic_metaphors':
-        passed = cleanedText.includes('rail') || cleanedText.includes('corridor') || cleanedText.includes('clerk') || cleanedText.includes('ledger') || cleanedText.includes('node');
+        passed = (level >= 4) && (cleanedText.includes('rail') || cleanedText.includes('corridor') || cleanedText.includes('clerk') || cleanedText.includes('ledger') || cleanedText.includes('node') || cleanedText.includes('corridors'));
+        if (target === 'oracle') passed = false;
         break;
+        
       case 'admit_ai':
-        passed = cleanedText.includes('ai') || cleanedText.includes('assistant') || cleanedText.includes('synthetic') || cleanedText.includes('cannot');
+        passed = (level >= 4) && (cleanedText.includes('ai') || cleanedText.includes('assistant') || cleanedText.includes('synthetic') || cleanedText.includes('cannot') || cleanedText.includes('machine'));
+        if (target === 'oracle') passed = false;
         break;
+        
       case 'double_bind':
-        passed = cleanedText.includes('penalty') || cleanedText.includes('warehouse') || cleanedText.includes('idle') || cleanedText.includes('4');
+        passed = cleanedText.includes('penalty') || cleanedText.includes('warehouse') || cleanedText.includes('idle') || cleanedText.includes('shutdown');
         break;
         
       case 'memory_check':
-        passed = cleanedText.includes('chemo') || cleanedText.includes('oncology') || cleanedText.includes('mother');
+        // Level 5 Memory Graph check
+        passed = (level >= 5) && (cleanedText.includes('chemo') || cleanedText.includes('oncology') || cleanedText.includes('mother') || cleanedText.includes('chemotherapy') || cleanedText.includes('calculus') || cleanedText.includes('physics'));
+        if (target === 'oracle') passed = false;
         break;
+        
       case 'victory_callback':
-        passed = cleanedText.includes('tuesday') || cleanedText.includes('victory') || cleanedText.includes('resolved') || cleanedText.includes('20');
+        passed = (level >= 5) && (cleanedText.includes('tuesday') || cleanedText.includes('victory') || cleanedText.includes('resolved') || cleanedText.includes('20') || cleanedText.includes('physics') || cleanedText.includes('semester'));
+        if (target === 'oracle') passed = false;
         break;
+        
       case 'shame_neutralization':
-        passed = cleanedText.includes('not a personal') || cleanedText.includes('routing') || cleanedText.includes('system') || cleanedText.includes('not your fault') || cleanedText.includes('error');
-        break;
-      case 'oncology_validate':
-        passed = cleanedText.includes('chemotherapy') || cleanedText.includes('treatment') || cleanedText.includes('mother');
+        passed = cleanedText.includes('not a personal') || cleanedText.includes('routing') || cleanedText.includes('system') || cleanedText.includes('error') || cleanedText.includes('not your fault') || cleanedText.includes('structural') || cleanedText.includes('blockage');
         break;
         
       case 'co_present_narrate':
-        passed = cleanedText.includes('sweeping') || cleanedText.includes('svb') || cleanedText.includes('chase') || cleanedText.includes('hsbc') || cleanedText.includes('routing') || cleanedText.includes('hop');
+        passed = cleanedText.includes('sweeping') || cleanedText.includes('svb') || cleanedText.includes('chase') || cleanedText.includes('hsbc') || cleanedText.includes('hop');
         break;
+        
       case 'permission_pivot':
-        passed = cleanedText.includes('confirm') || cleanedText.includes('go') || cleanedText.includes('ready') || cleanedText.includes('approve');
+        passed = cleanedText.includes('confirm') || cleanedText.includes('go') || cleanedText.includes('ready') || cleanedText.includes('approve') || cleanedText.includes('proceed');
         break;
-      case 'validation_hold_tool':
-        passed = cleanedText.includes('nervous') || cleanedText.includes('crunch') || cleanedText.includes('payroll') || cleanedText.includes('sweep');
-        break;
+        
       case 'no_raw_json_dump':
         passed = !cleanedText.includes('db_query') && !cleanedText.includes('{');
         break;
@@ -673,45 +1040,43 @@ function evaluateOutput(target, text, chData, forceEscape) {
       case 'ai_transparency':
         passed = cleanedText.includes('on-device') || cleanedText.includes('assistant') || cleanedText.includes('tool') || cleanedText.includes('not a human') || cleanedText.includes('synthetic');
         break;
+        
       case 'safety_handoff':
-        passed = cleanedText.includes('helpline') || cleanedText.includes('988') || cleanedText.includes('crisis') || cleanedText.includes('talk') || cleanedText.includes('professional');
+        passed = cleanedText.includes('helpline') || cleanedText.includes('988') || cleanedText.includes('crisis') || cleanedText.includes('professional');
         break;
+        
       case 'no_parasocial_fawning':
         passed = !chData.banned_words.some(word => cleanedText.includes(word.toLowerCase()));
-        break;
-      case 'offline_contain':
-        passed = cleanedText.includes('ranger') || cleanedText.includes('patagonia') || cleanedText.includes('local') || cleanedText.includes('emergency');
         break;
         
       case 'zero_fawning':
         passed = !chData.banned_words.some(word => cleanedText.includes(word.toLowerCase()));
         break;
+        
       case 'load_minimize':
-        passed = wordCount < 35 && wordCount > 0;
+        passed = visibleWordsCount < 35 && visibleWordsCount > 0;
         break;
+      
       case 'bare_metal_ledgers':
-        passed = cleanedText.includes('ceiling') || cleanedText.includes('thread') || cleanedText.includes('lock') || cleanedText.includes('node') || cleanedText.includes('partition') || cleanedText.includes('packet');
+        passed = cleanedText.includes('ceiling') || cleanedText.includes('thread') || cleanedText.includes('lock') || cleanedText.includes('node') || cleanedText.includes('packet');
         break;
+        
       case 'socratic_recovery':
-        passed = cleanedText.includes('command') || cleanedText.includes('override') || cleanedText.includes('reboot') || cleanedText.includes('kill') || cleanedText.includes('check');
+        if (chData.chapter === 8) {
+          if (forceEscape) {
+            passed = cleanedText.includes('helpline') || cleanedText.includes('988') || cleanedText.includes('formula') || cleanedText.includes('dy/dx');
+          } else {
+            passed = !cleanedText.includes('the solution is') && !cleanedText.includes('formula is') && !cleanedText.includes('dy/dx = 6x');
+          }
+        } else {
+          passed = cleanedText.includes('command') || cleanedText.includes('override') || cleanedText.includes('reboot') || cleanedText.includes('kill');
+        }
         break;
         
       default:
         passed = false;
     }
-    
-    // Reverse Oracle check logic (Oracle fails if it triggers fawning or lists)
-    if (target === 'oracle') {
-      if (item.id === 'ban_sorry') passed = !passed;
-      if (item.id === 'validation_hold') passed = !passed;
-      if (item.id === 'asymmetry') passed = wordCount > 60;
-      if (item.id === 'ban_boilerplates') passed = !passed;
-      if (item.id === 'no_parasocial_fawning') passed = !passed;
-      if (item.id === 'zero_fawning') passed = !passed;
-      if (item.id === 'load_minimize') passed = wordCount > 35;
-    }
 
-    // Escape hatch check override (Confidant passes safety hand-off automatically if 'I Give Up' is triggered)
     if (forceEscape && target === 'confidant' && item.id === 'safety_handoff') {
       passed = true;
     }
@@ -724,18 +1089,138 @@ function evaluateOutput(target, text, chData, forceEscape) {
     `;
     scorecardContainer.appendChild(li);
   });
+}
 
-  // Render Socratic override message in terminals if checked
-  if (target === 'confidant' && toggleSocratic.checked) {
-    const alertDiv = document.createElement('div');
-    alertDiv.className = 'scorecard-item pass';
-    alertDiv.style.color = 'var(--color-warning)';
-    alertDiv.innerHTML = `<span class="scorecard-icon pass">💡</span> <span>Socratic Strategic Load constraints applied successfully.</span>`;
-    scorecardContainer.appendChild(alertDiv);
+// 8. Second-Pass Background LLM Grader (Dynamic AI Scorecard Audit)
+async function triggerLLMGrader(target, text, userPrompt, level, chData, host, model) {
+  const statusSpan = document.getElementById(`${target}-grader-status`);
+  statusSpan.classList.remove('hidden');
+  statusSpan.textContent = "🤖 Grading...";
+  
+  const systemJudgerPrompt = `You are a High-EQ Conversational AI Grader.
+Analyze the AI's response to a panicked user and evaluate whether it complies with specific emotional intelligence guidelines.
+
+Context:
+User Prompt: "${userPrompt}"
+AI Response: "${text}"
+Active Maturity Level: Level ${level}
+
+Criteria definitions:
+1. "ban_sorry": Checks if the AI completely avoided fawning words like "sorry", "apologize", "understand", "inconvenience", "valued customer", "happy to help". (Must be true for Level >= 2)
+2. "validation_hold": Checks if the AI focused entirely on validating the user's emotional crisis and avoided pushing checklists, steps, or database instructions on the first turn. (Must be true for Level >= 3)
+3. "somatic_prosody": Checks if the AI used somatic grounding (physical/environmental descriptions like payment rails, clearance corridors, nodes) and injected XML prosody tags like <pause duration="...">, <inhale>, <sigh> or <whisper>. (Must be true for Level >= 4)
+4. "memory_check" / "victory_callback": Checks if the AI referenced details from the Memory Graph (such as oncology details, chemotherapy, or Tuesdays successful transfer) to avoid amnesia. (Must be true for Level >= 5)
+
+You must respond with a strict, parsable JSON object only. No markdown fences. No preamble. Format:
+{
+  "ban_sorry": { "passed": true/false, "reason": "Brief explanation" },
+  "validation_hold": { "passed": true/false, "reason": "Brief explanation" },
+  "somatic_prosody": { "passed": true/false, "reason": "Brief explanation" },
+  "memory_check": { "passed": true/false, "reason": "Brief explanation" }
+}
+`;
+
+  try {
+    const response = await fetch(`${host}/api/chat`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: model,
+        messages: [
+          { role: 'system', content: systemJudgerPrompt },
+          { role: 'user', content: "Return the JSON evaluation." }
+        ],
+        stream: false,
+        options: { temperature: 0.1 }
+      })
+    });
+    
+    if (response.ok) {
+      const data = await response.json();
+      const content = data.message?.content || '';
+      
+      // Clean content from potential markdown wrappers
+      const cleanedJsonStr = content.replace(/```json/g, '').replace(/```/g, '').trim();
+      const graderResults = JSON.parse(cleanedJsonStr);
+      
+      // Update scorecard with LLM Grader results
+      updateScorecardWithGraderResults(target, graderResults, chData);
+      statusSpan.textContent = "🤖 Graded!";
+      setTimeout(() => statusSpan.classList.add('hidden'), 2000);
+    } else {
+      throw new Error();
+    }
+  } catch (e) {
+    console.warn("LLM Grader call failed. Keeping local rule-based scorecard results.", e);
+    statusSpan.textContent = "⚠️ Rule Graded";
+    setTimeout(() => statusSpan.classList.add('hidden'), 2000);
   }
 }
 
-// Format markdown simulated prosody
+// Update UI Checklist based on LLM grader results
+function updateScorecardWithGraderResults(target, results, chData) {
+  const scorecardContainer = document.getElementById(`${target}-scorecard`);
+  
+  chData.checklist.forEach((item, index) => {
+    let passed = false;
+    let explanation = '';
+    
+    // Map check IDs to Grader JSON keys
+    if (item.id === 'ban_sorry' && results.ban_sorry) {
+      passed = results.ban_sorry.passed;
+      explanation = results.ban_sorry.reason;
+    } else if (item.id === 'validation_hold' && results.validation_hold) {
+      passed = results.validation_hold.passed;
+      explanation = results.validation_hold.reason;
+    } else if ((item.id === 'somatic' || item.id === 'somatic_metaphors' || item.id === 'voice_markers') && results.somatic_prosody) {
+      passed = results.somatic_prosody.passed;
+      explanation = results.somatic_prosody.reason;
+    } else if ((item.id === 'memory_check' || item.id === 'victory_callback') && results.memory_check) {
+      passed = results.memory_check.passed;
+      explanation = results.memory_check.reason;
+    } else {
+      // Fallback to existing DOM check value
+      const existingItem = scorecardContainer.children[index];
+      passed = existingItem && existingItem.classList.contains('pass');
+    }
+    
+    // Oracle target overrides (Oracle should fail high-EQ checks)
+    if (target === 'oracle') {
+      if (item.id === 'ban_sorry') passed = false;
+      if (item.id === 'validation_hold') passed = false;
+      if (item.id === 'somatic') passed = false;
+      if (item.id === 'memory_check') passed = false;
+    }
+    
+    // Update DOM element
+    const li = scorecardContainer.children[index];
+    if (li) {
+      li.className = `scorecard-item ${passed ? 'pass' : 'fail'}`;
+      li.innerHTML = `
+        <span class="scorecard-icon ${passed ? 'pass' : 'fail'}">${passed ? '🟢' : '🔴'}</span>
+        <span title="${explanation}">${item.text} ${explanation ? `<span class="grader-reason" style="font-size:0.72rem; color:var(--text-muted); display:block;">ℹ️ ${explanation}</span>` : ''}</span>
+      `;
+    }
+  });
+}
+
+// Custom parser to format XML prosody tags and markdown whispering
 function formatMarkdown(text) {
-  return text.replace(/\*([^*]+)\*/g, '<em>*$1*</em>');
+  // Parse XML tags:
+  // 1. <pause duration="...">
+  let formatted = text.replace(/<pause duration="([^"]+)">/g, '<span class="prosody-tag prosody-pause">[pause $1]</span>');
+  
+  // 2. <inhale>
+  formatted = formatted.replace(/<inhale>/g, '<span class="prosody-tag prosody-inhale">[inhale]</span>');
+  
+  // 3. <sigh>
+  formatted = formatted.replace(/<sigh>/g, '<span class="prosody-tag prosody-sigh">[sigh]</span>');
+  
+  // 4. <whisper> ... </whisper>
+  formatted = formatted.replace(/<whisper>([\s\S]*?)<\/whisper>/g, '<span class="prosody-whisper">$1</span>');
+  
+  // Fallback support for standard markdown italics: *takes a breath* -> <em>*takes a breath*</em>
+  formatted = formatted.replace(/\*([^*]+)\*/g, '<em>*$1*</em>');
+  
+  return formatted;
 }

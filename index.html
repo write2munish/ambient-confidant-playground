@@ -26,6 +26,16 @@
         <ul id="chapter-list">
           <!-- Dynamically populated via JS -->
         </ul>
+        
+        <h3 class="nav-section-title" style="margin-top: 1.5rem;">Business & Architecture</h3>
+        <ul>
+          <li>
+            <button class="nav-item" id="nav-roi-calc">
+              <span class="nav-item-num">Calculator</span>
+              <span class="nav-item-title">📊 PM Support ROI Calculator</span>
+            </button>
+          </li>
+        </ul>
       </nav>
       
       <!-- Ollama Connection Widget -->
@@ -62,206 +72,380 @@
         </div>
       </div>
 
-      <!-- Active Chapter Header -->
-      <section class="chapter-header-panel">
-        <div class="badge" id="chapter-badge">Chapter 1</div>
-        <h2 id="chapter-title" class="outfit-font">The Ambient Confidant Model</h2>
-        <p id="chapter-subtitle">From Utility to Silicon Intimacy</p>
-        
-        <div class="value-prop-card">
-          <div class="value-prop-icon">📈</div>
-          <div class="value-prop-text">
-            <strong>Why Product Managers Care (ROI / Retention Impact):</strong>
-            <p id="chapter-pm-value">Empathy is a business moat. Transactional AI tones trigger threat responses in humans, driving session abandonment. The Validation-First protocol builds long-term relationship value.</p>
-          </div>
-        </div>
-      </section>
-
-      <!-- Input and Controls Section -->
-      <section class="control-panel">
-        <!-- Col 1: Scenario details & Memory Graph JSON Editor -->
-        <div class="panel-section">
-          <h3 class="section-title">Active FinTech Scenario</h3>
-          <div class="scenario-details">
-            <strong id="scenario-title">B2C Card Decline</strong>
-            <p id="scenario-desc" style="margin-bottom: 12px;">A retail consumer experiencing card decline at checkout with a crying toddler in tow.</p>
-            
-            <label for="memory-graph-editor" class="sub-section-title">🧠 Edit JSON Memory Graph (Chapter 4 State)</label>
-            <textarea id="memory-graph-editor" class="code-font" rows="6" placeholder="{ ... }"></textarea>
-            <button id="btn-save-graph" class="btn btn-secondary btn-xs" style="margin-top: 6px; width: 100%;">Save Graph Context</button>
-          </div>
-        </div>
-
-        <!-- Col 2: Prompt inputs & custom toggles -->
-        <div class="panel-section">
-          <div class="input-header">
-            <h3 class="section-title">Edit User Input Prompt</h3>
-            <button id="btn-reset-prompt" class="btn-text">Reset Default</button>
-          </div>
-          <div class="prompt-input-container">
-            <textarea id="user-prompt" placeholder="Type a message to test..." rows="3"></textarea>
-          </div>
+      <!-- PLAYGROUND CONTAINER VIEW -->
+      <div id="playground-view">
+        <!-- Active Chapter Header -->
+        <section class="chapter-header-panel">
+          <div class="badge" id="chapter-badge">Chapter 1</div>
+          <h2 id="chapter-title" class="outfit-font">The Ambient Confidant Model</h2>
+          <p id="chapter-subtitle">From Utility to Silicon Intimacy</p>
           
-          <!-- Special Modifier Handles -->
-          <div class="mod-controls-container">
-            <div class="toggle-control">
+          <div class="value-prop-card">
+            <div class="value-prop-icon">📈</div>
+            <div class="value-prop-text">
+              <strong>Why Product Managers Care (ROI / Retention Impact):</strong>
+              <p id="chapter-pm-value">Empathy is a business moat. Transactional AI tones trigger threat responses in humans, driving session abandonment. The Validation-First protocol builds long-term relationship value.</p>
+            </div>
+          </div>
+
+          <!-- Collapsible Acronym Mapping Accordion -->
+          <details class="meta-accordion" id="architecture-accordion" style="margin-top: 1rem;">
+            <summary>🏛️ CONFIDANT Acronym Architecture Mapping</summary>
+            <div class="accordion-content">
+              <table class="acronym-table">
+                <thead>
+                  <tr>
+                    <th>Chapter</th>
+                    <th>Acronym Letter & Core Focus</th>
+                    <th>Technical Architecture Element</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td><strong>Ch 1</strong></td>
+                    <td><span class="letter-badge">C</span> Context Continuity, <span class="letter-badge">F</span> Friction Mgmt</td>
+                    <td>Amnesia Tax suppression, Validation Hold protocol, Token pacing Logit shifts.</td>
+                  </tr>
+                  <tr>
+                    <td><strong>Ch 2</strong></td>
+                    <td><span class="letter-badge">A</span> Adaptive Prosody, <span class="letter-badge">O</span> Observational Awareness</td>
+                    <td>XML vocal tag parser (&lt;pause&gt;, &lt;inhale&gt;), registry pitch shift, rate downregulation.</td>
+                  </tr>
+                  <tr>
+                    <td><strong>Ch 3</strong></td>
+                    <td><span class="letter-badge">O</span> Observational Awareness, <span class="letter-badge">N</span> Narrative Memory</td>
+                    <td>Lexical banishment protocol (suppressing apologetic lists), somatic grounding descriptions.</td>
+                  </tr>
+                  <tr>
+                    <td><strong>Ch 4</strong></td>
+                    <td><span class="letter-badge">C</span> Context Continuity, <span class="letter-badge">N</span> Narrative Memory, <span class="letter-badge">T</span> Trust Calibration</td>
+                    <td>Encrypted local Memory Graph JSON database states, Victory Call-Back loops.</td>
+                  </tr>
+                  <tr>
+                    <td><strong>Ch 5</strong></td>
+                    <td><span class="letter-badge">D</span> Delegated Agency, <span class="letter-badge">I</span> Intent Recognition</td>
+                    <td>Silence Penalty suppression, Co-Present Narration, Socratic permission pivot gates.</td>
+                  </tr>
+                  <tr>
+                    <td><strong>Ch 6</strong></td>
+                    <td><span class="letter-badge">T</span> Trust Calibration, <span class="letter-badge">N</span> Non-Manipulative Influence</td>
+                    <td>Quantized local SLM ethical enclaves, emergency hand-offs, parasocial boundaries.</td>
+                  </tr>
+                  <tr>
+                    <td><strong>Ch 7</strong></td>
+                    <td><span class="letter-badge">T</span> Trust Calibration, <span class="letter-badge">F</span> Friction Mgmt</td>
+                    <td>Severity-1 Outage Load Minimization, zero-fawning compliance pipelines.</td>
+                  </tr>
+                  <tr>
+                    <td><strong>Bonus</strong></td>
+                    <td><span class="letter-badge">F</span> Friction Management, <span class="letter-badge">I</span> Intent Recognition</td>
+                    <td>Socratic withholdings (Answer Ban), calculus tutor cognitive struggle mapping.</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </details>
+        </section>
+
+        <!-- Input and Controls Section -->
+        <section class="control-panel">
+          <!-- Col 1: Scenario details & Memory Graph JSON Editor -->
+          <div class="panel-section">
+            <h3 class="section-title">Active Scenario Details</h3>
+            <div class="scenario-details">
+              <strong id="scenario-title">B2C Card Decline</strong>
+              <p id="scenario-desc" style="margin-bottom: 12px;">A retail consumer experiencing card decline at checkout with a crying toddler in tow.</p>
+              
+              <!-- Dynamic Scoped Graph Editor Container -->
+              <div id="memory-graph-container" class="graph-editor-container">
+                <label for="memory-graph-editor" class="sub-section-title">🧠 Edit JSON Memory Graph</label>
+                <div class="editor-relative-wrapper">
+                  <textarea id="memory-graph-editor" class="code-font" rows="6" placeholder="{ ... }"></textarea>
+                  <div id="memory-graph-overlay" class="editor-overlay hidden">
+                    <div class="overlay-blur-box"></div>
+                    <span class="overlay-text">🔒 Active for Chapter 4 & Bonus Tutor (L5 Only)</span>
+                  </div>
+                </div>
+                <button id="btn-save-graph" class="btn btn-secondary btn-xs" style="margin-top: 6px; width: 100%;">Save Graph Context</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Col 2: Prompt inputs & custom toggles -->
+          <div class="panel-section">
+            <div class="input-header">
+              <h3 class="section-title">Edit User Input Prompt</h3>
+              <div class="prompt-actions-box">
+                <button id="btn-reset-chat" class="btn-text" style="margin-right: 12px; color: var(--color-danger);">🧹 Reset Chat History</button>
+                <button id="btn-reset-prompt" class="btn-text">Reset Default</button>
+              </div>
+            </div>
+            <div class="prompt-input-container">
+              <textarea id="user-prompt" placeholder="Type a message to test..." rows="3"></textarea>
+            </div>
+            
+            <!-- Special Modifier Handles -->
+            <div class="mod-controls-container">
+              <div class="toggle-control">
+                <label class="switch">
+                  <input type="checkbox" id="toggle-socratic">
+                  <span class="slider round"></span>
+                </label>
+                <span class="control-label-text">
+                  <strong>Socratic Mode (Answer Ban)</strong>
+                  <p>Reintroduces strategic cognitive load (forces self-discovery)</p>
+                </span>
+              </div>
+              
+              <div class="action-buttons-box">
+                <button id="btn-give-up" class="btn btn-secondary btn-icon-only" title="Simulate 'I Give Up' trigger to force escape hatch">
+                  🛑 Simulate "I Give Up"
+                </button>
+                <button id="btn-run" class="btn btn-primary btn-large">
+                  <span class="btn-icon">⚡</span> Send Prompt
+                </button>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Comparative Terminal Grid -->
+        <section class="terminals-grid">
+          
+          <!-- Terminal 1: Oracle -->
+          <article class="terminal-card oracle-theme">
+            <div class="terminal-header">
+              <div class="terminal-window-dots">
+                <span class="dot red"></span>
+                <span class="dot yellow"></span>
+                <span class="dot green"></span>
+              </div>
+              <div class="terminal-header-title-box">
+                <div class="terminal-title">The Oracle AI (Static Level 1)</div>
+                <div class="terminal-maturity" id="oracle-maturity">Level 1: Stateless Utility</div>
+              </div>
+              <div class="terminal-status" id="oracle-status">Ready</div>
+            </div>
+            
+            <!-- Output pane converted into dynamic Chat Feed -->
+            <div class="terminal-body chat-feed scroll-container" id="oracle-chat-feed">
+              <div class="chat-placeholder" id="oracle-placeholder">
+                <div class="placeholder-icon">🤖</div>
+                <p>Start a multi-turn conversation.<br>History will grow here.</p>
+              </div>
+            </div>
+
+            <div class="terminal-metrics">
+              <div class="metric-group">
+                <span class="metric-label">Tokens:</span>
+                <span class="metric-value" id="oracle-token-count">0</span>
+              </div>
+              <div class="metric-group">
+                <span class="metric-label">Latency:</span>
+                <span class="metric-value" id="oracle-latency">0ms</span>
+              </div>
+              <div class="metric-group hidden" id="oracle-speech-group">
+                <button id="btn-speak-oracle" class="btn btn-secondary btn-xs" style="padding: 2px 8px;">🔊 Listen Oracle</button>
+              </div>
+            </div>
+            
+            <!-- Scorecard & Prompts -->
+            <div class="terminal-meta-panel">
+              <details class="meta-drawer">
+                <summary>
+                  📋 EQ Evaluation Scorecard
+                  <span id="oracle-grader-status" class="grader-status-span hidden">Evaluating...</span>
+                </summary>
+                <div class="drawer-content">
+                  <ul class="scorecard-list" id="oracle-scorecard">
+                    <!-- Generated dynamically -->
+                  </ul>
+                </div>
+              </details>
+              <details class="meta-drawer">
+                <summary>🔍 System Prompt Inspector</summary>
+                <div class="drawer-content">
+                  <pre class="code-block" id="oracle-system-prompt"></pre>
+                </div>
+              </details>
+            </div>
+          </article>
+
+          <!-- Terminal 2: Confidant with Maturity Tab Ladder -->
+          <article class="terminal-card confidant-theme">
+            <div class="terminal-header">
+              <div class="terminal-window-dots">
+                <span class="dot pulse-blue"></span>
+                <span class="dot pulse-purple"></span>
+                <span class="dot pulse-indigo"></span>
+              </div>
+              <div class="terminal-header-title-box">
+                <div class="terminal-title" id="confidant-title-text">The Confidant AI (Level 5)</div>
+                <div class="terminal-maturity" id="confidant-maturity">Level 5: Relationship-Integrated</div>
+              </div>
+              <div class="terminal-status" id="confidant-status">Ready</div>
+            </div>
+
+            <!-- Maturity Tab Ladder Bar -->
+            <div class="maturity-tabs-bar">
+              <button class="maturity-tab" data-level="1">L1: Oracle</button>
+              <button class="maturity-tab" data-level="2">L2: Banish</button>
+              <button class="maturity-tab" data-level="3">L3: Hold</button>
+              <button class="maturity-tab" data-level="4">L4: Somatic</button>
+              <button class="maturity-tab active" data-level="5">L5: Memory</button>
+            </div>
+
+            <!-- Internal Monologue Scaffolding Panel -->
+            <div class="monologue-scaffolding-bar">
+              <span>🧠 Chain-of-Thought Internal Monologue (Turn 1 only)</span>
               <label class="switch">
-                <input type="checkbox" id="toggle-socratic">
+                <input type="checkbox" id="toggle-monologue" checked>
                 <span class="slider round"></span>
               </label>
-              <span class="control-label-text">
-                <strong>Socratic Mode (Answer Ban)</strong>
-                <p>Reintroduces strategic cognitive load (forces self-discovery)</p>
-              </span>
             </div>
-            
-            <div class="action-buttons-box">
-              <button id="btn-give-up" class="btn btn-secondary btn-icon-only" title="Simulate 'I Give Up' trigger to force escape hatch">
-                🛑 Simulate "I Give Up"
-              </button>
-              <button id="btn-run" class="btn btn-primary btn-large">
-                <span class="btn-icon">⚡</span> Run Comparison
-              </button>
-            </div>
-          </div>
-        </div>
-      </section>
 
-      <!-- Comparative Terminal Grid -->
-      <section class="terminals-grid">
-        
-        <!-- Terminal 1: Oracle -->
-        <article class="terminal-card oracle-theme">
-          <div class="terminal-header">
-            <div class="terminal-window-dots">
-              <span class="dot red"></span>
-              <span class="dot yellow"></span>
-              <span class="dot green"></span>
-            </div>
-            <div class="terminal-header-title-box">
-              <div class="terminal-title">The Oracle AI (Transactional)</div>
-              <div class="terminal-maturity" id="oracle-maturity">Level 1: Stateless Utility</div>
-            </div>
-            <div class="terminal-status" id="oracle-status">Ready</div>
-          </div>
-          
-          <div class="terminal-body" id="oracle-output-pane">
-            <div class="chat-placeholder">
-              <div class="placeholder-icon">🤖</div>
-              <p>Outputs standard helpful, fawning response.</p>
-            </div>
-          </div>
-
-          <div class="terminal-metrics">
-            <div class="metric-group">
-              <span class="metric-label">Tokens:</span>
-              <span class="metric-value" id="oracle-token-count">0</span>
-            </div>
-            <div class="metric-group">
-              <span class="metric-label">Latency:</span>
-              <span class="metric-value" id="oracle-latency">0ms</span>
-            </div>
-          </div>
-          
-          <!-- Scorecard & Prompts -->
-          <div class="terminal-meta-panel">
-            <details class="meta-drawer">
-              <summary>📋 EQ Evaluation Scorecard</summary>
-              <div class="drawer-content">
-                <ul class="scorecard-list" id="oracle-scorecard">
-                  <!-- Generated dynamically -->
-                </ul>
+            <!-- Output pane converted into dynamic Chat Feed -->
+            <div class="terminal-body scroll-container chat-feed" id="confidant-chat-feed">
+              <div class="monologue-container hidden" id="confidant-monologue-pane">
+                <div class="monologue-header">Internal Monologue (Hidden in Production)</div>
+                <div class="monologue-body" id="confidant-monologue-text"></div>
               </div>
-            </details>
-            <details class="meta-drawer">
-              <summary>🔍 System Prompt Inspector</summary>
-              <div class="drawer-content">
-                <pre class="code-block" id="oracle-system-prompt"></pre>
-              </div>
-            </details>
-          </div>
-        </article>
-
-        <!-- Terminal 2: Confidant -->
-        <article class="terminal-card confidant-theme">
-          <div class="terminal-header">
-            <div class="terminal-window-dots">
-              <span class="dot pulse-blue"></span>
-              <span class="dot pulse-purple"></span>
-              <span class="dot pulse-indigo"></span>
-            </div>
-            <div class="terminal-header-title-box">
-              <div class="terminal-title">The Confidant AI (High-EQ)</div>
-              <div class="terminal-maturity" id="confidant-maturity">Level 4: Context-Aware</div>
-            </div>
-            <div class="terminal-status" id="confidant-status">Ready</div>
-          </div>
-
-          <!-- Internal Monologue Scaffolding Panel -->
-          <div class="monologue-scaffolding-bar">
-            <span>🧠 Chain-of-Thought Internal Monologue</span>
-            <label class="switch">
-              <input type="checkbox" id="toggle-monologue" checked>
-              <span class="slider round"></span>
-            </label>
-          </div>
-
-          <div class="terminal-body scroll-container" id="confidant-output-container">
-            <div class="monologue-container hidden" id="confidant-monologue-pane">
-              <div class="monologue-header">Internal Monologue (Hidden in Production)</div>
-              <div class="monologue-body" id="confidant-monologue-text"></div>
-            </div>
-            <div class="chat-output-pane" id="confidant-output-pane">
-              <div class="chat-placeholder">
-                <div class="placeholder-icon">🔮</div>
-                <p>Outputs validation-first, paced, and grounded response.</p>
-              </div>
-            </div>
-          </div>
-
-          <div class="terminal-metrics">
-            <div class="metric-group">
-              <span class="metric-label">Tokens:</span>
-              <span class="metric-value" id="confidant-token-count">0</span>
-            </div>
-            <div class="metric-group">
-              <span class="metric-label">Latency:</span>
-              <span class="metric-value" id="confidant-latency">0ms</span>
-            </div>
-          </div>
-
-          <!-- Scorecard, Prompts, & Banned Word Scanner -->
-          <div class="terminal-meta-panel">
-            <details class="meta-drawer" open>
-              <summary>📋 EQ Evaluation Scorecard</summary>
-              <div class="drawer-content">
-                <ul class="scorecard-list" id="confidant-scorecard">
-                  <!-- Generated dynamically -->
-                </ul>
-              </div>
-            </details>
-            <details class="meta-drawer">
-              <summary>🚫 Lexical Scanner (Banned Phrase Check)</summary>
-              <div class="drawer-content">
-                <div class="banned-phrase-scanner">
-                  <strong>Chapter Banned Phrase Index:</strong>
-                  <div class="banned-words-tags" id="banned-words-tags">
-                    <!-- Dynamically populated -->
-                  </div>
-                  <p class="banned-scanner-desc">If the AI outputs any of these tokens, it triggers a fawning violation warning on the scorecard check.</p>
+              
+              <div class="chat-output-feed" id="confidant-output-feed">
+                <div class="chat-placeholder" id="confidant-placeholder">
+                  <div class="placeholder-icon">🔮</div>
+                  <p>Outputs validation-first response according to selected level.<br>Multi-turn conversation will grow here.</p>
                 </div>
               </div>
-            </details>
-            <details class="meta-drawer">
-              <summary>🔍 System Prompt Inspector</summary>
-              <div class="drawer-content">
-                <pre class="code-block" id="confidant-system-prompt"></pre>
-              </div>
-            </details>
-          </div>
-        </article>
+            </div>
 
-      </section>
+            <div class="terminal-metrics">
+              <div class="metric-group">
+                <span class="metric-label">Tokens:</span>
+                <span class="metric-value" id="confidant-token-count">0</span>
+              </div>
+              <div class="metric-group">
+                <span class="metric-label">Latency:</span>
+                <span class="metric-value" id="confidant-latency">0ms</span>
+              </div>
+              <div class="metric-group" id="asymmetry-ratio-group">
+                <span class="metric-label">Asymmetry Ratio:</span>
+                <span class="metric-value" id="confidant-asymmetry-ratio">0.00</span>
+                <span class="metric-target">(Target: 1.0 - 1.3)</span>
+              </div>
+              <div class="metric-group hidden" id="speech-group">
+                <button id="btn-speak-confidant" class="btn btn-secondary btn-xs" style="padding: 2px 8px;">🔊 Listen Pacing</button>
+              </div>
+            </div>
+
+            <!-- Scorecard, Prompts, & Banned Word Scanner -->
+            <div class="terminal-meta-panel">
+              <details class="meta-drawer" open>
+                <summary>
+                  📋 EQ Evaluation Scorecard
+                  <span id="confidant-grader-status" class="grader-status-span hidden">Evaluating...</span>
+                </summary>
+                <div class="drawer-content">
+                  <ul class="scorecard-list" id="confidant-scorecard">
+                    <!-- Generated dynamically -->
+                  </ul>
+                </div>
+              </details>
+              <details class="meta-drawer">
+                <summary>🚫 Lexical Scanner (Banned Phrase Check)</summary>
+                <div class="drawer-content">
+                  <div class="banned-phrase-scanner">
+                    <strong>Chapter Banned Phrase Index:</strong>
+                    <div class="banned-words-tags" id="banned-words-tags">
+                      <!-- Dynamically populated -->
+                    </div>
+                    <p class="banned-scanner-desc">Triggered terms will dynamically light up red to indicate a fawning/corporate violation check.</p>
+                  </div>
+                </div>
+              </details>
+              <details class="meta-drawer">
+                <summary>🔍 System Prompt Inspector</summary>
+                <div class="drawer-content">
+                  <pre class="code-block" id="confidant-system-prompt"></pre>
+                </div>
+              </details>
+            </div>
+          </article>
+
+        </section>
+      </div>
+
+      <!-- PM ROI CALCULATOR VIEW (Hidden by default) -->
+      <div id="roi-workspace-view" class="hidden">
+        <section class="chapter-header-panel">
+          <div class="badge" style="background: rgba(16, 185, 129, 0.15); border-color: rgba(16, 185, 129, 0.3); color: var(--color-success);">ROI Calculator</div>
+          <h2 class="outfit-font">📊 Support ROI & ARR Recovery Calculator</h2>
+          <p>Translate High-EQ Level 4/5 Conversational Design into financial metrics, proving empathy is the ultimate business moat.</p>
+        </section>
+
+        <section class="roi-calculator-layout">
+          <!-- Col 1: Calculator Inputs -->
+          <div class="roi-card input-panel">
+            <h3 class="section-title">Support Parameters</h3>
+            
+            <div class="roi-field-group">
+              <div class="roi-field-header">
+                <label for="input-mau">Monthly Active Users (MAU)</label>
+                <span class="roi-field-val" id="val-mau">50,000</span>
+              </div>
+              <input type="range" id="input-mau" min="5000" max="250000" step="5000" value="50000">
+            </div>
+
+            <div class="roi-field-group">
+              <div class="roi-field-header">
+                <label for="input-abandon">Current Session Abandonment Rate (%)</label>
+                <span class="roi-field-val" id="val-abandon">15%</span>
+              </div>
+              <input type="range" id="input-abandon" min="5" max="50" step="1" value="15">
+              <p class="field-help-text">Users exiting chats out of frustration/robotic platitudes (the "Amnesia Tax").</p>
+            </div>
+
+            <div class="roi-field-group">
+              <div class="roi-field-header">
+                <label for="input-arpu">Monthly Average Revenue Per User (ARPU)</label>
+                <span class="roi-field-val" id="val-arpu">$30</span>
+              </div>
+              <input type="range" id="input-arpu" min="5" max="250" step="5" value="30">
+            </div>
+          </div>
+
+          <!-- Col 2: Projected Outputs -->
+          <div class="roi-card output-panel">
+            <h3 class="section-title" style="color: var(--color-success);">Projected Annual Impact</h3>
+            
+            <div class="roi-metrics-grid">
+              <div class="roi-metric-box">
+                <span class="box-label">SCNS Improvement</span>
+                <span class="box-val text-info">+18 pts</span>
+                <span class="box-desc">Session Continuation after Negative Sentiment</span>
+              </div>
+              
+              <div class="roi-metric-box">
+                <span class="box-label">Frustrated Users Recovered</span>
+                <span class="box-val text-warning" id="val-users-recovered">1,125 / mo</span>
+                <span class="box-desc">15% recovery on abandonment lifts</span>
+              </div>
+            </div>
+
+            <div class="roi-large-result">
+              <span class="result-label">ESTIMATED ANNUAL ARR RECOVERED</span>
+              <h2 class="result-val text-success" id="val-arr-recovered">$405,000</h2>
+              <p class="result-desc">ARR protected by replacing stateless goldfish Oracles with continuous Context-Anchored Confidants.</p>
+            </div>
+
+            <div class="roi-formula-box">
+              <strong>The Book Formula (Chapter 7 ROI Analysis):</strong>
+              <code>ARR Recovered = MAU * (Abandonment Rate * 0.15) * ARPU * 12</code>
+              <p>Downregulating user panic directly blocks churn triggers, turning emotional validation into a metrics-provable financial moat.</p>
+            </div>
+          </div>
+        </section>
+      </div>
 
       <!-- Troubleshooting Info -->
       <section class="footer-help">
