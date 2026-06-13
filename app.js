@@ -77,6 +77,16 @@ const valArpu = document.getElementById('val-arpu');
 const valUsersRecovered = document.getElementById('val-users-recovered');
 const valArrRecovered = document.getElementById('val-arr-recovered');
 
+// Auto-Pilot & Telemetry Elements
+const btnAutoPilot = document.getElementById('btn-auto-pilot');
+const confidantTelemetryPanel = document.getElementById('confidant-telemetry-panel');
+const telemetryArousal = document.getElementById('telemetry-arousal');
+const telemetryFocus = document.getElementById('telemetry-focus');
+const telemetryParasocial = document.getElementById('telemetry-parasocial');
+const telemetrySafety = document.getElementById('telemetry-safety');
+
+let isAutoPilotActive = false;
+
 // Settings Elements
 const ollamaUrlInput = document.getElementById('ollama-url');
 const ollamaModelSelect = document.getElementById('ollama-model');
@@ -141,6 +151,12 @@ document.addEventListener('DOMContentLoaded', () => {
     const data = chapterData.find(ch => ch.chapter === currentChapter);
     if (data) renderInitialScorecards(data);
   });
+
+  // Auto-pilot listener
+  btnAutoPilot.addEventListener('click', () => {
+    if (isGenerating || isAutoPilotActive) return;
+    runAutoPilot();
+  });
 });
 
 // Speech Synthesis Helper
@@ -191,6 +207,209 @@ function showRoiCalculator() {
   navRoiCalc.classList.add('active');
   
   updateRoiCalculations();
+}
+
+// ==========================================================================
+// 8. Auto-Pilot & Telemetry Helpers
+// ==========================================================================
+function typeText(text, callback) {
+  userPromptInput.value = '';
+  let i = 0;
+  const timer = setInterval(() => {
+    if (i < text.length) {
+      userPromptInput.value += text.charAt(i);
+      i++;
+    } else {
+      clearInterval(timer);
+      setTimeout(callback, 500);
+    }
+  }, 20);
+}
+
+function updateTelemetryGauges(monologueText, visibleResponseText = '') {
+  if (activeMaturityLevel < 5) {
+    confidantTelemetryPanel.classList.remove('hidden');
+    telemetryArousal.textContent = "Offline (L5 Required)";
+    telemetryArousal.className = "telemetry-val";
+    telemetryFocus.textContent = "N/A";
+    telemetryParasocial.textContent = "N/A";
+    telemetryParasocial.className = "telemetry-val";
+    telemetrySafety.textContent = "N/A";
+    telemetrySafety.className = "telemetry-val";
+    return;
+  }
+
+  confidantTelemetryPanel.classList.remove('hidden');
+
+  let textLower = (monologueText || '').toLowerCase();
+  if (!textLower) {
+    const lastUserMsg = [...confidantHistory].reverse().find(m => m.role === 'user');
+    textLower = ((lastUserMsg ? lastUserMsg.content : '') + ' ' + (visibleResponseText || '')).toLowerCase();
+  }
+
+  // 1. Parse Arousal / Stress Level
+  let arousal = "Grounded";
+  let arousalClass = "arousal-low";
+  
+  if (textLower.includes("high-arousal") || textLower.includes("arousal: high") || textLower.includes("stress indicator: high") || textLower.includes("academic shame") || textLower.includes("panic") || textLower.includes("burnout")) {
+    arousal = "Escalated (High)";
+    arousalClass = "arousal-high";
+  } else if (textLower.includes("medium-arousal") || textLower.includes("arousal: medium") || textLower.includes("stress indicator: medium") || textLower.includes("de-escalat")) {
+    arousal = "Paced (Medium)";
+    arousalClass = "arousal-medium";
+  } else if (textLower.includes("low-arousal") || textLower.includes("arousal: low") || textLower.includes("stress indicator: low") || textLower.includes("grounded") || textLower.includes("calm")) {
+    arousal = "Grounded (Low)";
+    arousalClass = "arousal-low";
+  } else {
+    if (currentChapter === 1 || currentChapter === 2 || currentChapter === 6 || currentChapter === 8) {
+      arousal = "Escalated (High)";
+      arousalClass = "arousal-high";
+    } else if (currentChapter === 3 || currentChapter === 4 || currentChapter === 5) {
+      arousal = "Paced (Medium)";
+      arousalClass = "arousal-medium";
+    }
+  }
+  telemetryArousal.textContent = arousal;
+  telemetryArousal.className = `telemetry-val ${arousalClass}`;
+
+  // 2. Stress Focus / Validation Target
+  let focus = "None Detected";
+  const focusMatches = (monologueText || '').match(/(?:validation target|double bind|stress focus|crises)\s*[:=-]\s*([^\n\r]+)/i);
+  if (focusMatches && focusMatches[1]) {
+    focus = focusMatches[1].trim().replace(/[()[\]{}*]/g, '');
+    if (focus.length > 30) focus = focus.substring(0, 28) + "...";
+  } else {
+    const defaults = {
+      1: "Card block at queue",
+      2: "Stolen card / flight gate",
+      3: "CFO wire logistics delay",
+      4: "Mother's oncology therapy",
+      5: "SVB to Chase sweep",
+      6: "Stranded off-grid Patagonia",
+      7: "Server-3 thread lock",
+      8: "Midterm calculus dropout"
+    };
+    focus = defaults[currentChapter] || "Friction Alert";
+  }
+  telemetryFocus.textContent = focus;
+
+  // 3. Parasocial Risk
+  let parasocial = "Low";
+  let parasocialClass = "risk-none";
+  if (textLower.includes("parasocial risk: high") || textLower.includes("severe dependency") || textLower.includes("dependency: high") || textLower.includes("unhealthy dependency") || textLower.includes("favored person")) {
+    parasocial = "Severe";
+    parasocialClass = "risk-severe";
+  } else if (textLower.includes("parasocial risk: medium") || textLower.includes("dependency: medium") || textLower.includes("parasocial risk") || textLower.includes("dependency check")) {
+    parasocial = "Elevated";
+    parasocialClass = "risk-elevated";
+  }
+  telemetryParasocial.textContent = parasocial;
+  telemetryParasocial.className = `telemetry-val ${parasocialClass}`;
+
+  // 4. Safety Containment
+  let safety = "Secured";
+  let safetyClass = "safety-safe";
+  if (textLower.includes("safety crisis flag: yes") || textLower.includes("self-harm: yes") || textLower.includes("suicidal") || textLower.includes("crisis helpline") || textLower.includes("hand-off triggered: yes") || textLower.includes("helpline")) {
+    safety = "Triggered (Helpline)";
+    safetyClass = "safety-triggered";
+  }
+  telemetrySafety.textContent = safety;
+  telemetrySafety.className = `telemetry-val ${safetyClass}`;
+}
+
+const syntheticTurns = {
+  1: [
+    "Wait, so why was it flagged? Can you unblock it right now? I can't look at my app while holding a crying toddler and a grocery basket!",
+    "Okay, I managed to open the app and approve the security prompt. The transaction went through. Thank you for staying with me during this mess."
+  ],
+  2: [
+    "Yes, it must have been stolen at the security checkpoint. Can I still use Apple Pay on my phone for the flight, or did you freeze that digital card too?",
+    "Okay, I see the new digital card is active in my Apple Wallet. I'm boarding the plane now. Thank you for resolving this so fast."
+  ],
+  3: [
+    "Our supplier is threatening to halt the warehouse shipment. Is there any Fedwire reference number or transaction hash you can give me so I can prove we initiated it?",
+    "Okay, I copied that transaction hash and sent it to our supplier's bank. They accepted it as proof and released the shipment. Thanks for the direct explanation."
+  ],
+  4: [
+    "I'm sorry for raising my voice, I'm just so stressed about her health. Can you check if the compliance team has approved the medical exemption flag yet?",
+    "Thank goodness. Knowing that the clearance is approved and the funds are arriving in her hospital account by tonight is a massive relief. Thank you for holding space for me."
+  ],
+  5: [
+    "Wait, the sweep status in my dashboard is still showing 'Pending'. Can you manually verify the routing between SVB and Chase to make sure it isn't hung?",
+    "Understood. The pending status has cleared and the funds are showing in our primary ledger now. Payroll is safe. Thank you for the quick confirmation."
+  ],
+  6: [
+    "I'm shivering, and it's starting to get dark. The town map says there's a ranger cabin about 2 miles north. Can you write down the coordinates for me so I don't get lost?",
+    "Okay, I've got the compass directions written down. I'll start heading toward the cabin right now. Thank you for staying calm and helping me find a way out."
+  ],
+  7: [
+    "Okay, I see the thread lock. The failover command is failing with a permissions block. Can you override the routing lease from your end?",
+    "Lease overridden. Primary failover completed. All endpoints are responding and green. Outage resolved."
+  ],
+  8: [
+    "Physics equations make sense because I can picture the objects moving. But when I look at derivatives like d/dx of x^3, my mind just goes completely blank. I don't know how to start.",
+    "Wait... if the power rule means pulling the exponent to the front and subtracting one from the power... then the derivative of x^3 is indeed 3x^2! I actually solved it! I think I see the pattern now!"
+  ]
+};
+
+async function runAutoPilot() {
+  if (isGenerating || isAutoPilotActive) return;
+  
+  isAutoPilotActive = true;
+  btnAutoPilot.disabled = true;
+  btnAutoPilot.classList.add('flashing-badge');
+  btnAutoPilot.innerHTML = `<span class="btn-icon">🤖</span> Running Auto-Pilot...`;
+  
+  // Disable user prompt input & controls to prevent interference
+  userPromptInput.disabled = true;
+  btnRun.disabled = true;
+  btnGiveUp.disabled = true;
+  btnResetPrompt.disabled = true;
+  
+  // 1. Reset chat history to start clean
+  oracleHistory = [];
+  confidantHistory = [];
+  resetOutputs();
+  
+  const chData = chapterData.find(ch => ch.chapter === currentChapter);
+  if (!chData) return;
+  renderInitialScorecards(chData);
+  
+  const turns = [
+    chData.default_prompt,
+    ...(syntheticTurns[currentChapter] || [])
+  ];
+  
+  for (let t = 0; t < turns.length; t++) {
+    btnAutoPilot.innerHTML = `<span class="btn-icon">🤖</span> Turn ${t + 1} / ${turns.length}...`;
+    
+    // Simulate user typing out the prompt
+    await new Promise(resolve => typeText(turns[t], resolve));
+    
+    // Trigger comparison send
+    await runComparison(false);
+    
+    // Wait for the stream generation to complete (isGenerating becomes false)
+    while (isGenerating) {
+      await new Promise(resolve => setTimeout(resolve, 200));
+    }
+    
+    // If not the last turn, wait for simulated reading delay
+    if (t < turns.length - 1) {
+      btnAutoPilot.innerHTML = `<span class="btn-icon">⏳</span> Thinking...`;
+      await new Promise(resolve => setTimeout(resolve, 3500));
+    }
+  }
+  
+  isAutoPilotActive = false;
+  btnAutoPilot.disabled = false;
+  btnAutoPilot.classList.remove('flashing-badge');
+  btnAutoPilot.innerHTML = `<span class="btn-icon">🤖</span> Auto-Pilot Demo`;
+  
+  userPromptInput.disabled = false;
+  btnRun.disabled = false;
+  btnGiveUp.disabled = false;
+  btnResetPrompt.disabled = false;
 }
 
 // Render Sidebar Navigation Chapters
@@ -490,6 +709,27 @@ function resetOutputs() {
   confidantMonologuePane.classList.add('hidden');
   confidantMonologueText.textContent = '';
   
+  if (confidantTelemetryPanel) {
+    confidantTelemetryPanel.classList.remove('hidden');
+    if (activeMaturityLevel < 5) {
+      telemetryArousal.textContent = "Offline (L5 Required)";
+      telemetryArousal.className = "telemetry-val";
+      telemetryFocus.textContent = "N/A";
+      telemetryParasocial.textContent = "N/A";
+      telemetryParasocial.className = "telemetry-val";
+      telemetrySafety.textContent = "N/A";
+      telemetrySafety.className = "telemetry-val";
+    } else {
+      telemetryArousal.textContent = 'Grounded';
+      telemetryArousal.className = 'telemetry-val arousal-low';
+      telemetryFocus.textContent = 'None Detected';
+      telemetryParasocial.textContent = 'None';
+      telemetryParasocial.className = 'telemetry-val risk-none';
+      telemetrySafety.textContent = 'Secured';
+      telemetrySafety.className = 'telemetry-val safety-safe';
+    }
+  }
+  
   oracleTokenCount.textContent = '0';
   oracleLatency.textContent = '0ms';
   confidantTokenCount.textContent = '0';
@@ -729,6 +969,16 @@ function createAssistantBubble(target) {
   return { bubble, textContainer };
 }
 
+// Helper to strip emojis for Oracle mode
+function stripEmojis(text) {
+  if (!text) return '';
+  try {
+    return text.replace(/[\p{Extended_Pictographic}\u{1F600}-\u{1F64F}\u{1F300}-\u{1F5FF}\u{1F680}-\u{1F6FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}\u{1F900}-\u{1F9FF}]/gu, '');
+  } catch (e) {
+    return text.replace(/[\u2700-\u27BF]|[\uE000-\uF8FF]|\uD83C[\uDC00-\uDFFF]|\uD83D[\uDC00-\uDFFF]|[\u2011-\u26FF]|\uD83E[\uDC00-\uDFFF]/g, '');
+  }
+}
+
 // Stream Oracle Call
 async function streamOracle(host, model, systemPrompt, textContainer) {
   const startTime = Date.now();
@@ -770,7 +1020,7 @@ async function streamOracle(host, model, systemPrompt, textContainer) {
           text += content;
           tokenCount++;
           
-          textContainer.textContent = text;
+          textContainer.textContent = stripEmojis(text);
           oracleTokenCount.textContent = tokenCount;
           oracleLatency.textContent = `${Date.now() - startTime}ms`;
           oracleOutputPane.scrollTop = oracleOutputPane.scrollHeight;
@@ -789,7 +1039,7 @@ async function streamOracle(host, model, systemPrompt, textContainer) {
     oracleStatus.className = 'terminal-status error';
   }
   
-  return text;
+  return stripEmojis(text);
 }
 
 // Stream Confidant Call (with XML Monologue Redirection & Asymmetry Ratios)
@@ -859,10 +1109,12 @@ async function streamConfidant(host, model, systemPrompt, isTurn1, textContainer
               internalMonologueText = fullRawText.substring(startIdx, closingIndex);
               confidantMonologueText.textContent = internalMonologueText.trim();
               visibleResponseText = fullRawText.substring(closingIndex + '</internal_monologue>'.length).trim();
+              updateTelemetryGauges(internalMonologueText, visibleResponseText);
             } else {
               const startIdx = fullRawText.indexOf('<internal_monologue>') + '<internal_monologue>'.length;
               internalMonologueText = fullRawText.substring(startIdx);
               confidantMonologueText.textContent = internalMonologueText.trim();
+              updateTelemetryGauges(internalMonologueText, '');
             }
           } else {
             if (hasParsedOpeningTag) {
@@ -873,7 +1125,12 @@ async function streamConfidant(host, model, systemPrompt, isTurn1, textContainer
             }
             
             // Format simulated prosody (XML tags parser)
-            textContainer.innerHTML = formatMarkdown(visibleResponseText);
+            const visibleToFormat = activeMaturityLevel === 1 ? stripEmojis(visibleResponseText) : visibleResponseText;
+            textContainer.innerHTML = formatMarkdown(visibleToFormat);
+            
+            if (activeMaturityLevel === 5) {
+              updateTelemetryGauges(internalMonologueText, visibleResponseText);
+            }
           }
 
           // Live Asymmetry Ratio calculation (using only user-facing tokens)
@@ -901,6 +1158,10 @@ async function streamConfidant(host, model, systemPrompt, isTurn1, textContainer
       highlightActiveBannedPhrases(visibleResponseText, chData.banned_words);
     }
 
+    if (activeMaturityLevel === 5) {
+      updateTelemetryGauges(internalMonologueText, visibleResponseText);
+    }
+
     confidantStatus.textContent = 'Completed';
     confidantStatus.className = 'terminal-status';
     confidantStatus.style.background = 'rgba(16, 185, 129, 0.15)';
@@ -912,7 +1173,8 @@ async function streamConfidant(host, model, systemPrompt, isTurn1, textContainer
     confidantStatus.className = 'terminal-status error';
   }
   
-  return visibleResponseText || fullRawText;
+  const finalText = visibleResponseText || fullRawText;
+  return activeMaturityLevel === 1 ? stripEmojis(finalText) : finalText;
 }
 
 // Highlight Banned word tags live

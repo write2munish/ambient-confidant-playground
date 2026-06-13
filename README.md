@@ -8,15 +8,17 @@ This playground acts as a direct companion to the book: *The Ambient Confidant: 
 
 ## 🚀 Key Features
 1. **Interactive Chapter Sidebar:** Select and test case studies from all chapters, including the **Bonus Chapter 8 Socratic Tutor** (failing midterm calculations).
-2. **Multi-Turn Chat Feeds:** Real-time conversational feeds representing the "Amnesia Tax" where the Oracle forgets past turns and the Confidant retains active Memory Graph states.
-3. **Interactive JSON Memory Graph Editor:** Edit the active crises, traps, and victories in real-time, click "Save Graph Context", and witness how the Confidant dynamically performs victory call-backs.
-4. **Web Speech API Vocal Pacing:** Native, keyless text-to-speech comparison in Chapter 2, downregulating the Confidant's pitch to `0.8` and rate to `0.72` compared to the default Oracle (`1.0` pitch, `1.0` rate).
-5. **PM Support ROI Calculator:** Interactive slider workspace that calculates protected ARR and recovered users from session abandonment improvements.
-6. **Socratic Mode Toggle (Answer Ban):** Enable Socratic constraints to force the Confidant to withhold the final solution and ask strategic, learning-oriented queries.
-7. **Lexical Banned-Phrase Scanner:** Inspect the banned word indices for each chapter in real-time. Triggered terms automatically light up red as the tokens are parsed.
-8. **"I Give Up" Escape Hatch:** Click the trigger button to simulate extreme user frustration and watch the Confidant bypass the Socratic loop to execute emergency compliance hand-offs.
-9. **Chain-of-Thought Inspector:** View the Confidant's hidden `<internal_monologue>` sequence as it runs state inferences and validation checks (visible for Turn 1).
-10. **Direct Ollama Integration:** Communicates locally with your Ollama server. No external API keys or subscription fees required.
+2. **Auto-Pilot Chat Simulation Mode:** Click a single button to run a simulated hands-free 3-turn conversation script for the active chapter, showing the "Amnesia Tax" vs "Memory Graph" contrast live.
+3. **Real-Time Input Signal Telemetry Panel:** A diagnostic HUD panel in the Confidant terminal that parses monologue tokens in real-time, displaying gauges for **Autonomic Arousal**, **Stress Focus**, **Parasocial Risk**, and **Safety Containment**.
+4. **Multi-Turn Chat Feeds:** Real-time conversational feeds representing dialogue context across multiple turns.
+5. **Interactive JSON Memory Graph Editor:** Edit the active crises, traps, and victories in real-time, click "Save Graph Context", and witness how the Confidant dynamically performs victory call-backs.
+6. **Web Speech API Vocal Pacing:** Native, keyless text-to-speech comparison in Chapter 2, downregulating the Confidant's pitch to `0.8` and rate to `0.72` compared to the default Oracle (`1.0` pitch, `1.0` rate).
+7. **PM Support ROI Calculator:** Interactive slider workspace that calculates protected ARR and recovered users from session abandonment improvements.
+8. **Socratic Mode Toggle (Answer Ban):** Enable Socratic constraints to force the Confidant to withhold the final solution and ask strategic, learning-oriented queries.
+9. **Lexical Banned-Phrase Scanner:** Inspect the banned word indices for each chapter in real-time. Triggered terms automatically light up red as the tokens are parsed.
+10. **"I Give Up" Escape Hatch:** Click the trigger button to simulate extreme user frustration and watch the Confidant bypass the Socratic loop to execute emergency compliance hand-offs.
+11. **Chain-of-Thought Inspector:** View the Confidant's hidden `<internal_monologue>` sequence as it runs state inferences and validation checks (visible for Turn 1).
+12. **Direct Ollama Integration:** Communicates locally with your Ollama server. No external API keys or subscription fees required.
 
 ---
 

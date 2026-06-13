@@ -198,6 +198,9 @@
               </div>
               
               <div class="action-buttons-box">
+                <button id="btn-auto-pilot" class="btn btn-secondary" title="Run hands-free multi-turn simulation">
+                  🤖 Auto-Pilot Demo
+                </button>
                 <button id="btn-give-up" class="btn btn-secondary btn-icon-only" title="Simulate 'I Give Up' trigger to force escape hatch">
                   🛑 Simulate "I Give Up"
                 </button>
@@ -302,6 +305,29 @@
                 <input type="checkbox" id="toggle-monologue" checked>
                 <span class="slider round"></span>
               </label>
+            </div>
+
+            <!-- Real-Time Input Signal & Safety Telemetry Panel -->
+            <div id="confidant-telemetry-panel" class="telemetry-panel hidden">
+              <div class="telemetry-title">📡 Input Signal Diagnostic Telemetry</div>
+              <div class="telemetry-grid">
+                <div class="telemetry-box">
+                  <span class="telemetry-label">Autonomic Arousal</span>
+                  <span id="telemetry-arousal" class="telemetry-val arousal-low">Grounded</span>
+                </div>
+                <div class="telemetry-box">
+                  <span class="telemetry-label">Stress Focus</span>
+                  <span id="telemetry-focus" class="telemetry-val">None Detected</span>
+                </div>
+                <div class="telemetry-box">
+                  <span class="telemetry-label">Parasocial Risk</span>
+                  <span id="telemetry-parasocial" class="telemetry-val risk-low">None</span>
+                </div>
+                <div class="telemetry-box">
+                  <span class="telemetry-label">Safety Containment</span>
+                  <span id="telemetry-safety" class="telemetry-val safety-safe">Secured</span>
+                </div>
+              </div>
             </div>
 
             <!-- Output pane converted into dynamic Chat Feed -->
